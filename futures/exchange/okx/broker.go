@@ -35,3 +35,12 @@ func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 	}
 	return data.TransferOkxSymbolInfo(resp)
 }
+func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
+	resp, err := NewRestApi().Tickers24h(map[string]interface{}{
+		"instType": "FUTURES",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return data.TransferOkxTicker(resp)
+}

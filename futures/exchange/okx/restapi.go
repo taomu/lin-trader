@@ -101,7 +101,7 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	return string(respBody), nil
 }
 
-func (ra *RestApi) Futures24hr(params map[string]interface{}) (string, error) {
+func (ra *RestApi) Tickers24h(params map[string]interface{}) (string, error) {
 	url := "/api/v5/market/tickers"
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)

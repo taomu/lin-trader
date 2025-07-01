@@ -38,3 +38,6 @@ func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 	}
 	return data.TransferBinanceSymbolInfo(resp)
 }
+func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
+	return nil, nil
+}

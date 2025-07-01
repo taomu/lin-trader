@@ -66,8 +66,8 @@ func TransferOkxPremium(resp string) ([]Premium, error) {
 		rate, _ := strconv.ParseFloat(item.FundingRate, 64)
 		maxRate, _ := strconv.ParseFloat(item.MaxFundingRate, 64)
 		minRate, _ := strconv.ParseFloat(item.MinFundingRate, 64)
-		parts := strings.Split(item.InstId, "-")
-		symbol := parts[0] + parts[1]
+		parts := strings.Split(strings.Replace(item.InstId, "-SWAP", "", -1), "-")
+		symbol := strings.Join(parts, "")
 		nextSettleTs, _ := strconv.ParseInt(item.NextFundingTime, 10, 64)
 		fundingTime, _ := strconv.ParseInt(item.FundingTime, 10, 64)
 		premiums = append(premiums, Premium{

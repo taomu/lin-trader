@@ -101,8 +101,8 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 
 	var symbolInfos []SymbolInfo
 	for _, item := range apiResponse.Data {
-		parts := strings.Split(item.InstId, "-")
-		symbol := parts[0] + parts[1]
+		parts := strings.Split(strings.Replace(item.InstId, "-SWAP", "", -1), "-")
+		symbol := strings.Join(parts, "")
 		status := "TRADING"
 		if item.State == "preopen" {
 			status = "PREOPEN"
