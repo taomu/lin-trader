@@ -13,7 +13,7 @@ type BrokerPublic interface {
 	GetPremium() ([]data.Premium, error)           //获取资金费率信息
 	GetFundingInfo() ([]bndata.FundingInfo, error) //获取资金费率限制，仅用于binance
 	GetSymbolInfos() ([]data.SymbolInfo, error)    //获取所有合约交易对信息
-	GetTickers24h() ([]data.Ticker24H, error)           //获取所有合约的最新价格
+	GetTickers24h() ([]data.Ticker24H, error)      //获取所有合约的最新价格
 }
 
 type BrokerPrivate interface {

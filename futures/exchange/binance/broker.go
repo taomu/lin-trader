@@ -15,9 +15,7 @@ func (b *Broker) Test() {
 	fmt.Println("binance test")
 }
 func (b *Broker) GetPremium() ([]data.Premium, error) {
-	resp, err := NewRestApi().PremiumIndex(map[string]interface{}{
-		"instId": "ANY",
-	})
+	resp, err := NewRestApi().PremiumIndex(map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}
