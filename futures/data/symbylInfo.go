@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -16,8 +17,8 @@ type SymbolInfo struct {
 	MinLot    string // 最小下单张数
 	MinQty    string // 最小下单数量
 	Status    string // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
-	ExpTs     int64  // 下线时间 单位ms
-	OnborTs   int64  // 上线时间 单位ms
+	OnlineTs  int64  // 下线时间 单位ms
+	OfflineTs int64  // 上线时间 单位ms
 }
 
 func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
@@ -71,12 +72,12 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			QtyPrec:   fmt.Sprintf("%d", symbol.QuantityPrecision),
 			MinQty:    minQty,
 			// 币安没有这些字段，设为空或默认值
-			CtVal:   "",
-			LotPrec: "",
-			MinLot:  "",
-			Status:  status,
-			ExpTs:   symbol.DeliveryDate,
-			OnborTs: symbol.OnboardDate,
+			CtVal:     "",
+			LotPrec:   "",
+			MinLot:    "",
+			Status:    status,
+			OnlineTs:  symbol.DeliveryDate,
+			OfflineTs: symbol.OnboardDate,
 		})
 	}
 	return symbolInfos, nil
@@ -95,7 +96,8 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 			TickSz   string `json:"tickSz"`
 			LotSz    string `json:"lotSz"`
 			MinSz    string `json:"minSz"`
-			ExpTime  string `json:"expTime"`
+			ExpTime  string `json:"expTime"`  //下线时间
+			ListTime string `json:"listTime"` //上线时间 毫秒
 			State    string `json:"state"`
 		} `json:"data"`
 	}
@@ -115,6 +117,8 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		if item.State == "suspend" || item.State == "test" {
 			status = "STOP"
 		}
+		onlineTs, _ := strconv.ParseInt(item.ListTime, 10, 64)
+		offlineTs, _ := strconv.ParseInt(item.ExpTime, 10, 64)
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: item.InstId,
 			Symbol:    symbol,
@@ -125,6 +129,8 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 			MinLot:    item.MinSz,
 			MinQty:    item.MinSz,
 			Status:    status,
+			OnlineTs:  onlineTs,
+			OfflineTs: offlineTs,
 		})
 	}
 	return symbolInfos, nil
