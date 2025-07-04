@@ -17,6 +17,7 @@ type SymbolInfo struct {
 	MinQty    string // 最小下单数量
 	Status    string // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
 	ExpTs     int64  // 下线时间 单位ms
+	OnborTs   int64  // 上线时间 单位ms
 }
 
 func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
@@ -27,6 +28,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			QuantityPrecision  int    `json:"quantityPrecision"`
 			BaseAssetPrecision int    `json:"baseAssetPrecision"`
 			QuotePrecision     int    `json:"quotePrecision"`
+			DeliveryDate       int64  `json:"deliveryDate"` //下架时间 毫秒时间戳
+			OnboardDate        int64  `json:"onboardDate"`  //上线时间 毫秒时间戳
 			Filters            []struct {
 				FilterType  string `json:"filterType"`
 				MinQty      string `json:"minQty,omitempty"`
@@ -72,6 +75,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			LotPrec: "",
 			MinLot:  "",
 			Status:  status,
+			ExpTs:   symbol.DeliveryDate,
+			OnborTs: symbol.OnboardDate,
 		})
 	}
 	return symbolInfos, nil
