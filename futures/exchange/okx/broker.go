@@ -28,7 +28,7 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 }
 func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 	resp, err := NewRestApi().Instruments(map[string]interface{}{
-		"instType": "FUTURES",
+		"instType": "SWAP",
 	})
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 }
 func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
 	resp, err := NewRestApi().Tickers24h(map[string]interface{}{
-		"instType": "FUTURES",
+		"instType": "SWAP",
 	})
 	if err != nil {
 		return nil, err
