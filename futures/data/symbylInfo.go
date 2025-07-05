@@ -76,8 +76,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			LotPrec:   "",
 			MinLot:    "",
 			Status:    status,
-			OnlineTs:  symbol.DeliveryDate,
-			OfflineTs: symbol.OnboardDate,
+			OnlineTs:  symbol.OnboardDate,
+			OfflineTs: symbol.DeliveryDate,
 		})
 	}
 	return symbolInfos, nil
