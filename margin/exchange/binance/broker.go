@@ -31,7 +31,7 @@ func (b *Broker) ListSchedule() ([]bndata.Schedule, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%v", resp)
+	// fmt.Printf("%v", resp)
 	return bndata.TransferBinanceSchedule(resp)
 }
 func (b *Broker) DelistSchedule() ([]bndata.Schedule, error) {
@@ -39,6 +39,6 @@ func (b *Broker) DelistSchedule() ([]bndata.Schedule, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%v", resp)
+	// fmt.Printf("%v", resp)
 	return bndata.TransferBinanceSchedule(resp)
 }

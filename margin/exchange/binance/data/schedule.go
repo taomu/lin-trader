@@ -3,8 +3,8 @@ package data
 import "encoding/json"
 
 type Schedule struct {
-	ListTime              string   `json:"listTime"`
-	DelistTime            string   `json:"delistTime"`
+	ListTime              int64    `json:"listTime"`
+	DelistTime            int64    `json:"delistTime"`
 	CrossMarginAssets     []string `json:"crossMarginAssets"`
 	IsolatedMarginSymbols []string `json:"isolatedMarginSymbols"`
 }
