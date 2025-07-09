@@ -13,7 +13,12 @@ type Broker interface {
 	DelistSchedule() ([]bndata.Schedule, error)
 }
 
-func NewBroker(plat data.PLAT, apiInfo *data.ApiInfo) Broker {
+func NewBroker(plat data.PLAT, apikey, apisecret, passphrase string) Broker {
+	apiInfo := &data.ApiInfo{
+		Key:        apikey,
+		Secret:     apisecret,
+		Passphrase: passphrase,
+	}
 	if plat == data.PLAT_BINANCE {
 		return binance.NewBroker(apiInfo)
 	}
