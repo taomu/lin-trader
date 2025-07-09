@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/futures/data"
+	"github.com/taomu/lin-trader/margin/data"
 )
 
 type RestApi struct {
@@ -111,8 +111,23 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 }
 
 // -----------接口列表-------------
-func (ra *RestApi) GetAllPairs(params map[string]interface{}) (string, error) {
+// 杠杆交易对
+func (ra *RestApi) GetAllPairs(params map[string]interface{}, apiInfo *data.ApiInfo) (string, error) {
 	url := "/sapi/v1/margin/allPairs"
 	method := "GET"
-	return ra.sendRequest(url, method, params, nil)
+	return ra.sendRequest(url, method, params, apiInfo)
+}
+
+// 查询上架计划
+func (ra *RestApi) ListSchedule(params map[string]interface{}, apiInfo *data.ApiInfo) (string, error) {
+	url := "/sapi/v1/margin/list-schedule"
+	method := "GET"
+	return ra.sendRequest(url, method, params, apiInfo)
+}
+
+// 查询下架计划
+func (ra *RestApi) DelistSchedule(params map[string]interface{}, apiInfo *data.ApiInfo) (string, error) {
+	url := "/sapi/v1/margin/delist-schedule"
+	method := "GET"
+	return ra.sendRequest(url, method, params, apiInfo)
 }
