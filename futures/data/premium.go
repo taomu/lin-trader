@@ -74,7 +74,7 @@ func TransferOkxPremium(resp string) ([]Premium, error) {
 			Symbol:       symbol,
 			SymbolOri:    item.InstId,
 			Rate:         rate,
-			NextSettleTs: nextSettleTs,
+			NextSettleTs: fundingTime,
 			MaxRate:      maxRate,
 			MinRate:      minRate,
 			SettlePeriod: nextSettleTs - fundingTime,
