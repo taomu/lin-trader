@@ -11,6 +11,7 @@ type Broker interface {
 	GetAllPairs() ([]bndata.Pair, error)
 	ListSchedule() ([]bndata.Schedule, error)
 	DelistSchedule() ([]bndata.Schedule, error)
+	GetSymbolInfos() ([]data.SymbolInfo, error)
 }
 
 func NewBroker(plat data.PLAT, apikey, apisecret, passphrase string) Broker {

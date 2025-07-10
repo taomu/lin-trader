@@ -131,3 +131,10 @@ func (ra *RestApi) DelistSchedule(params map[string]interface{}, apiInfo *data.A
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+// 获取交易对信息
+func (ra *RestApi) GetSymbolInfos(params map[string]interface{}) (string, error) {
+	url := "/api/v3/exchangeInfo"
+	method := "GET"
+	return ra.sendRequest(url, method, params, nil)
+}

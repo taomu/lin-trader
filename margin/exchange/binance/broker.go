@@ -42,3 +42,11 @@ func (b *Broker) DelistSchedule() ([]bndata.Schedule, error) {
 	// fmt.Printf("%v", resp)
 	return bndata.TransferBinanceSchedule(resp)
 }
+func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
+	resp, err := NewRestApi().GetSymbolInfos(map[string]interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Printf("%v", resp)
+	return data.TransferBinanceSymbolInfo(resp)
+}

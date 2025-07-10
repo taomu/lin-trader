@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/taomu/lin-trader/margin/exchange/binance/data"
+	"github.com/taomu/lin-trader/margin"
+	"github.com/taomu/lin-trader/margin/data"
 )
 
 func main() {
@@ -27,10 +28,18 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 	// fmt.Printf("delistSchedules: %v", delistSchedules)
-	str := `[{"listTime":1752076800000,"crossMarginAssets":["LA"],"isolatedMarginSymbols":["LAUSDC","LAUSDT"]}]`
-	schedules, err := data.TransferBinanceSchedule(str)
+	//----------------------------
+	// str := `[{"listTime":1752076800000,"crossMarginAssets":["LA"],"isolatedMarginSymbols":["LAUSDC","LAUSDT"]}]`
+	// schedules, err := data.TransferBinanceSchedule(str)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Printf("schedules: %v", schedules)
+	//-------------------------------
+	broker := margin.NewBroker(data.PLAT_BINANCE, "", "", "")
+	symbolinfo, err := broker.GetSymbolInfos()
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("schedules: %v", schedules)
+	fmt.Printf("symbolinfo: %v", symbolinfo)
 }
