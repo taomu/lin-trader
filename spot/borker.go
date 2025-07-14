@@ -17,7 +17,7 @@ func NewBroker(plat common.PLAT, apikey, apisecret, passphrase string) Broker {
 		Secret:     apisecret,
 		Passphrase: passphrase,
 	}
-	if plat == common.PLAT_BINANCE {
+	if plat == common.PLAT_OKX {
 		return okx.NewBroker(apiInfo)
 	}
 	return nil

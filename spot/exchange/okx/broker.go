@@ -20,7 +20,7 @@ func (b *Broker) Test() {
 
 func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 	resp, err := NewRestApi().Instruments(map[string]interface{}{
-		"instType": "SWAP",
+		"instType": "SPOT",
 	})
 	if err != nil {
 		return nil, err
