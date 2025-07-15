@@ -31,7 +31,6 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 }
 func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 	resp, err := NewRestApi().ExchangeInfo(map[string]interface{}{})
-	fmt.Println(resp)
 	if err != nil {
 		return nil, err
 	}
