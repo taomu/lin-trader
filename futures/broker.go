@@ -7,6 +7,8 @@ import (
 	"github.com/taomu/lin-trader/futures/exchange/binance"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
+	"github.com/taomu/lin-trader/pkg/constant"
+	"github.com/taomu/lin-trader/pkg/types"
 )
 
 type BrokerPublic interface {
@@ -25,18 +27,18 @@ type Broker interface {
 	Test()
 }
 
-func NewBroker(plat data.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {
-	apiInfo := &data.ApiInfo{
+func NewBroker(plat constant.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {
+	apiInfo := &types.ApiInfo{
 		Key:        apiKey,
 		Secret:     apiSecret,
 		Passphrase: apiPass,
 	}
 	switch plat {
-	case data.PLAT_BINANCE:
+	case constant.PLAT_BINANCE:
 		return &binance.Broker{
 			ApiInfo: apiInfo,
 		}, nil
-	case data.PLAT_OKX:
+	case constant.PLAT_OKX:
 		return &okx.Broker{
 			ApiInfo: apiInfo,
 		}, nil

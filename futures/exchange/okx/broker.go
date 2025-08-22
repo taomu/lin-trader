@@ -5,10 +5,11 @@ import (
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
+	"github.com/taomu/lin-trader/pkg/types"
 )
 
 type Broker struct {
-	ApiInfo *data.ApiInfo
+	ApiInfo *types.ApiInfo
 }
 
 func (b *Broker) Test() {

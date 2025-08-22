@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/futures/data"
+	"github.com/taomu/lin-trader/pkg/types"
 )
 
 type RestApi struct {
@@ -34,7 +34,7 @@ func (ra *RestApi) createSign(secretKey string, params url.Values) string {
 	return fmt.Sprintf("%x", h.Sum(nil)) // 币安使用16进制格式签名
 }
 
-func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *data.ApiInfo) (string, error) {
+func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
 	var req *http.Request
 	var err error
 
@@ -116,7 +116,7 @@ func (ra *RestApi) ExchangeInfo(params map[string]interface{}) (string, error) {
 	return ra.sendRequest(url, method, params, nil)
 }
 
-func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *data.ApiInfo) (string, error) {
+func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
 	url := "/fapi/v1/order"
 	method := "POST"
 	return ra.sendRequest(url, method, params, apiInfo)

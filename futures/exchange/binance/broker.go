@@ -5,16 +5,17 @@ import (
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
+	"github.com/taomu/lin-trader/pkg/types"
 	"github.com/taomu/lin-trader/pkg/util"
 )
 
 type Broker struct {
-	ApiInfo *data.ApiInfo
+	ApiInfo *types.ApiInfo
 	WsUrl   string
 	wsDepth *util.ExcWebsocket
 }
 
-func NewBroker(apiInfo *data.ApiInfo) *Broker {
+func NewBroker(apiInfo *types.ApiInfo) *Broker {
 	return &Broker{
 		ApiInfo: apiInfo,
 		WsUrl:   "wss://fstream.binance.com/ws",
