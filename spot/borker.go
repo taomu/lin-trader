@@ -1,8 +1,9 @@
 package spot
 
 import (
-	"github.com/taomu/lin-trader/common"
 	"github.com/taomu/lin-trader/spot/data"
+	"github.com/taomu/lin-trader/pkg/constant"
+	"github.com/taomu/lin-trader/pkg/types"
 	"github.com/taomu/lin-trader/spot/exchange/okx"
 )
 
@@ -11,13 +12,13 @@ type Broker interface {
 	GetSymbolInfos() ([]data.SymbolInfo, error)
 }
 
-func NewBroker(plat common.PLAT, apikey, apisecret, passphrase string) Broker {
-	apiInfo := &common.ApiInfo{
+func NewBroker(plat constant.PLAT, apikey, apisecret, passphrase string) Broker {
+	apiInfo := &types.ApiInfo{
 		Key:        apikey,
 		Secret:     apisecret,
 		Passphrase: passphrase,
 	}
-	if plat == common.PLAT_OKX {
+	if plat == constant.PLAT_OKX {
 		return okx.NewBroker(apiInfo)
 	}
 	return nil

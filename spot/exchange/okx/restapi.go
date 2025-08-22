@@ -124,3 +124,9 @@ func (ra *RestApi) GetPremium(params map[string]interface{}) (string, error) {
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)
 }
+
+func (ra *RestApi) IndexTickers(params map[string]interface{}) (string, error) {
+	url := "/api/v5/market/index-tickers"
+	method := "GET"
+	return ra.sendRequest(url, method, params, nil)
+}

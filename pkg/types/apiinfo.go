@@ -1,4 +1,4 @@
-package common
+package types
 
 type ApiInfo struct {
 	Key        string

@@ -1,4 +1,4 @@
-package common
+package constant
 
 import "fmt"
 
