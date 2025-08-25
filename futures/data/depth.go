@@ -3,22 +3,22 @@ package data
 type Depth struct {
 	Time     int64
 	Symbol   string
-	Asks     []OrderBookItem
-	Bids     []OrderBookItem
-	DataId   int64
-	Sequence int64
+	Asks     []*BookItem
+	Bids     []*BookItem
+	Sequence int64 //当前序列id
+	LastSeq  int64 //上一个序列id
 }
 
 type DepthUpdate struct {
 	Time     int64
 	Symbol   string
-	Asks     []OrderBookItem
-	Bids     []OrderBookItem
-	DataId   int64
-	Sequence int64
+	Asks     []*BookItem
+	Bids     []*BookItem
+	Sequence int64 //当前序列id
+	LastSeq  int64 //上一个序列id
 }
 
-type OrderBookItem struct {
-	Price string
-	Qty   string
+type BookItem struct {
+	Price float64
+	Qty   float64
 }

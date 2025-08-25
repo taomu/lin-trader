@@ -1,7 +1,13 @@
 package data
 
+import (
+	"strconv"
+
+	"github.com/taomu/lin-trader/futures/data"
+)
+
 // WebSocket 深度事件（现货/合约基本一致）
-type DepthUpdate struct {
+type WsDepthUpdateRes struct {
 	EventType  string     `json:"e"`  // "depthUpdate"
 	EventTime  int64      `json:"E"`  //推送事件时间
 	Symbol     string     `json:"s"`  //交易对
@@ -34,4 +40,58 @@ type DepthRes struct {
 	Time    int64      `json:"time"`
 	Bids    [][]string `json:"bids"`
 	Asks    [][]string `json:"asks"`
+}
+
+func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
+	d := &data.Depth{
+		Time:     depthRes.Time,
+		Sequence: depthRes.FinalID,
+		Asks:     make([]*data.BookItem, 0),
+		Bids:     make([]*data.BookItem, 0),
+	}
+	for _, bid := range depthRes.Bids {
+		price, _ := strconv.ParseFloat(bid[0], 64)
+		qty, _ := strconv.ParseFloat(bid[1], 64)
+		d.Bids = append(d.Bids, &data.BookItem{
+			Price: price,
+			Qty:   qty,
+		})
+	}
+	for _, ask := range depthRes.Asks {
+		price, _ := strconv.ParseFloat(ask[0], 64)
+		qty, _ := strconv.ParseFloat(ask[1], 64)
+		d.Asks = append(d.Asks, &data.BookItem{
+			Price: price,
+			Qty:   qty,
+		})
+	}
+	return d
+}
+
+func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.DepthUpdate {
+	d := &data.DepthUpdate{
+		Time:     depthUpdate.Time,
+		Symbol:   depthUpdate.Symbol,
+		LastSeq:  depthUpdate.LastPushId,
+		Sequence: depthUpdate.FinalID,
+		Asks:     make([]*data.BookItem, 0),
+		Bids:     make([]*data.BookItem, 0),
+	}
+	for _, bid := range depthUpdate.Bids {
+		price, _ := strconv.ParseFloat(bid[0], 64)
+		qty, _ := strconv.ParseFloat(bid[1], 64)
+		d.Bids = append(d.Bids, &data.BookItem{
+			Price: price,
+			Qty:   qty,
+		})
+	}
+	for _, ask := range depthUpdate.Asks {
+		price, _ := strconv.ParseFloat(ask[0], 64)
+		qty, _ := strconv.ParseFloat(ask[1], 64)
+		d.Asks = append(d.Asks, &data.BookItem{
+			Price: price,
+			Qty:   qty,
+		})
+	}
+	return d
 }
