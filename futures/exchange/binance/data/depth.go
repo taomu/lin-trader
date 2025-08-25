@@ -68,8 +68,8 @@ func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
 	return d
 }
 
-func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.DepthUpdate {
-	d := &data.DepthUpdate{
+func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.Depth {
+	d := &data.Depth{
 		Time:     depthUpdate.Time,
 		Symbol:   depthUpdate.Symbol,
 		LastSeq:  depthUpdate.LastPushId,

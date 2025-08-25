@@ -56,7 +56,7 @@ func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
 	return nil, nil
 }
-func (b *Broker) SubDepth(symbol string, onData func(depthUpdateData *data.DepthUpdate, depthSnapData *data.Depth)) {
+func (b *Broker) SubDepth(symbol string, onData func(updateData *data.Depth, snapData *data.Depth)) {
 	if b.wsDepth == nil {
 		b.wsDepth = util.NewExcWebsocket(b.WsUrl)
 	}
@@ -81,7 +81,7 @@ func (b *Broker) SubDepth(symbol string, onData func(depthUpdateData *data.Depth
 	go b.initDepth(symbol)
 }
 
-func (b *Broker) depthMerge(depthUpdate data.DepthUpdate) {
+func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	if b.Depth == nil {
 		return
 	}
