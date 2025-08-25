@@ -50,13 +50,17 @@ func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
 func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
 	return nil, nil
 }
-func (b *Broker) SubDepth(onData func(depthUpdateData *bndata.DepthUpdate, depthSnapData *bndata.DepthSnapshot)) {
+func (b *Broker) SubDepth(onData func(depthUpdateData *data.DepthUpdate, depthSnapData *data.Depth)) {
+	fmt.Println("binance sub depth" + b.WsUrl)
 	if b.wsDepth == nil {
 		b.wsDepth = util.NewExcWebsocket(b.WsUrl)
 	}
+	fmt.Println("binance sub depth2")
 	b.wsDepth.OnConnect = func() {
+		fmt.Println("binance depth connect")
 		b.wsDepth.Push("btcusdt@depth@100ms")
 	}
+	fmt.Println("binance sub depth3")
 	b.wsDepth.OnMessage = func(msg string) {
 		fmt.Println(msg)
 	}

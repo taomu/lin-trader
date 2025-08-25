@@ -12,10 +12,11 @@ import (
 )
 
 type BrokerPublic interface {
-	GetPremium() ([]data.Premium, error)           //获取资金费率信息
-	GetFundingInfo() ([]bndata.FundingInfo, error) //获取资金费率限制，仅用于binance
-	GetSymbolInfos() ([]data.SymbolInfo, error)    //获取所有合约交易对信息
-	GetTickers24h() ([]data.Ticker24H, error)      //获取所有合约的最新价格
+	GetPremium() ([]data.Premium, error)                                                //获取资金费率信息
+	GetFundingInfo() ([]bndata.FundingInfo, error)                                      //获取资金费率限制，仅用于binance
+	GetSymbolInfos() ([]data.SymbolInfo, error)                                         //获取所有合约交易对信息
+	GetTickers24h() ([]data.Ticker24H, error)                                           //获取所有合约的最新价格
+	SubDepth(onData func(depthUpdateData *data.DepthUpdate, depthSnapData *data.Depth)) //订阅深度数据
 }
 
 type BrokerPrivate interface {
@@ -35,9 +36,7 @@ func NewBroker(plat constant.PLAT, apiKey, apiSecret, apiPass string) (Broker, e
 	}
 	switch plat {
 	case constant.PLAT_BINANCE:
-		return &binance.Broker{
-			ApiInfo: apiInfo,
-		}, nil
+		return binance.NewBroker(apiInfo), nil
 	case constant.PLAT_OKX:
 		return &okx.Broker{
 			ApiInfo: apiInfo,

@@ -45,3 +45,16 @@ func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
 	}
 	return data.TransferOkxTicker(resp)
 }
+
+func (b *Broker) SubDepth(onData func(depthUpdateData *data.DepthUpdate, depthSnapData *data.Depth)) {
+	// if b.wsDepth == nil {
+	// 	b.wsDepth = util.NewExcWebsocket(b.WsUrl)
+	// }
+	// b.wsDepth.OnConnect = func() {
+	// 	b.wsDepth.Push("btcusdt@depth@100ms")
+	// }
+	// b.wsDepth.OnMessage = func(msg string) {
+	// 	fmt.Println(msg)
+	// }
+	// b.wsDepth.Connect()
+}

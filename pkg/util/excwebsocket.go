@@ -34,6 +34,9 @@ func (sw *ExcWebsocket) Connect() error {
 	dialer := websocket.Dialer{
 		HandshakeTimeout: 10 * time.Second,
 	}
+	if sw.URL == "" {
+		return fmt.Errorf("url is empty")
+	}
 	conn, _, err := dialer.Dial(sw.URL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %v", err)
