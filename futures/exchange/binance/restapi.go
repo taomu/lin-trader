@@ -133,3 +133,9 @@ func (ra *RestApi) FundingInfo(params map[string]interface{}) (string, error) {
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)
 }
+
+func (ra *RestApi) Depth(params map[string]interface{}) (string, error) {
+	url := "/fapi/v1/depth"
+	method := "GET"
+	return ra.sendRequest(url, method, params, nil)
+}
