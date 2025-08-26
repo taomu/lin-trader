@@ -17,6 +17,7 @@ type BrokerPublic interface {
 	GetSymbolInfos() ([]data.SymbolInfo, error)                                        //获取所有合约交易对信息
 	GetTickers24h() ([]data.Ticker24H, error)                                          //获取所有合约的最新价格
 	SubDepth(symbol string, onData func(updateData *data.Depth, snapData *data.Depth)) //订阅深度数据
+	UnSubDepth(symbol string)                                                          //取消订阅深度数据
 }
 
 type BrokerPrivate interface {

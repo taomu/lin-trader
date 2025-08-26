@@ -58,3 +58,11 @@ func (b *Broker) SubDepth(symbol string, onData func(updateData *data.Depth, sna
 	// }
 	// b.wsDepth.Connect()
 }
+
+func (b *Broker) UnSubDepth(symbol string) {
+	// if b.wsDepth == nil {
+	// 	return
+	// }
+	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth@100ms"],"id": 1}`
+	// b.wsDepth.Push(msg)
+}
