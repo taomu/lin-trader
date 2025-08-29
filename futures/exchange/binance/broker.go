@@ -95,8 +95,8 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	}
 	b.Depth.Time = depthUpdate.Time
 	b.Depth.Symbol = depthUpdate.Symbol
-	b.Depth.Sequence = depthUpdate.Sequence
-	b.Depth.LastSeq = depthUpdate.LastSeq
+	b.Depth.FinalUpdateId = depthUpdate.FinalUpdateId
+	b.Depth.LastFinalUpdateId = depthUpdate.LastFinalUpdateId
 	//如果depthUpdate.Asks 的 price也存在 b.Depth.Asks 中，就更新 qty，否则添加
 	for _, ask := range depthUpdate.Asks {
 		exist := false

@@ -8,15 +8,15 @@ import (
 
 // WebSocket 深度事件（现货/合约基本一致）
 type WsDepthUpdateRes struct {
-	EventType  string     `json:"e"`  // "depthUpdate"
-	EventTime  int64      `json:"E"`  //推送事件时间
-	Symbol     string     `json:"s"`  //交易对
-	Time       int64      `json:"T"`  //深度更新时间
-	FirstID    int64      `json:"U"`  //当前推送第一个updateId
-	FinalID    int64      `json:"u"`  //当前推送最后一个updateId
-	LastPushId int64      `json:"pu"` //上一次推送的最后一个updateId
-	Bids       [][]string `json:"b"`  // [[price, qty], ...]
-	Asks       [][]string `json:"a"`  // [[price, qty], ...]
+	EventType         string     `json:"e"`  // "depthUpdate"
+	EventTime         int64      `json:"E"`  //推送事件时间
+	Symbol            string     `json:"s"`  //交易对
+	Time              int64      `json:"T"`  //深度更新时间
+	FirstUpdateID     int64      `json:"U"`  //当前推送第一个updateId
+	FinalUpdateID     int64      `json:"u"`  //当前推送最后一个updateId
+	LastFinalUpdateId int64      `json:"pu"` //上一次推送的最后一个updateId
+	Bids              [][]string `json:"b"`  // [[price, qty], ...]
+	Asks              [][]string `json:"a"`  // [[price, qty], ...]
 }
 
 // 深度快照
@@ -36,18 +36,18 @@ type OrderBook struct {
 
 // rest 请求depht数据
 type DepthRes struct {
-	FinalID int64      `json:"lastUpdateId"`
-	Time    int64      `json:"time"`
-	Bids    [][]string `json:"bids"`
-	Asks    [][]string `json:"asks"`
+	FinalUpdateID int64      `json:"lastUpdateId"`
+	Time          int64      `json:"time"`
+	Bids          [][]string `json:"bids"`
+	Asks          [][]string `json:"asks"`
 }
 
 func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
 	d := &data.Depth{
-		Time:     depthRes.Time,
-		Sequence: depthRes.FinalID,
-		Asks:     make([]*data.BookItem, 0),
-		Bids:     make([]*data.BookItem, 0),
+		Time:          depthRes.Time,
+		FinalUpdateId: depthRes.FinalUpdateID,
+		Asks:          make([]*data.BookItem, 0),
+		Bids:          make([]*data.BookItem, 0),
 	}
 	for _, bid := range depthRes.Bids {
 		price, _ := strconv.ParseFloat(bid[0], 64)
@@ -70,12 +70,12 @@ func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
 
 func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.Depth {
 	d := &data.Depth{
-		Time:     depthUpdate.Time,
-		Symbol:   depthUpdate.Symbol,
-		LastSeq:  depthUpdate.LastPushId,
-		Sequence: depthUpdate.FinalID,
-		Asks:     make([]*data.BookItem, 0),
-		Bids:     make([]*data.BookItem, 0),
+		Time:              depthUpdate.Time,
+		Symbol:            depthUpdate.Symbol,
+		FinalUpdateId:     depthUpdate.FinalUpdateID,
+		LastFinalUpdateId: depthUpdate.LastFinalUpdateId,
+		Asks:              make([]*data.BookItem, 0),
+		Bids:              make([]*data.BookItem, 0),
 	}
 	for _, bid := range depthUpdate.Bids {
 		price, _ := strconv.ParseFloat(bid[0], 64)
