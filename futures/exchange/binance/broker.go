@@ -105,6 +105,10 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	if b.Depth == nil {
 		return
 	}
+	// 添加对 Bids 和 Asks 的空指针检查
+	if b.Depth.Bids == nil || b.Depth.Asks == nil {
+		return
+	}
 	b.Depth.Time = depthUpdate.Time
 	b.Depth.Symbol = depthUpdate.Symbol
 	b.Depth.FinalUpdateId = depthUpdate.FinalUpdateId
