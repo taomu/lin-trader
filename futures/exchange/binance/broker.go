@@ -75,6 +75,18 @@ func (b *Broker) SubDepth(symbol string, onData func(updateData *data.Depth, sna
 		}
 		depthUpdate := bndata.TransferBinanceWsDepthUpdateRes(wsDepthUpdateRes)
 		b.depthMerge(*depthUpdate)
+		dMap := make(map[string]float64)
+		for _, ask := range depthUpdate.Asks {
+			priceStr := fmt.Sprintf("%f", ask.Price)
+
+			//判断 priceStr是否已存在dMap
+			_, ok := dMap[priceStr]
+			if ok {
+				fmt.Println("priceStr已存在", priceStr)
+			}
+			dMap[priceStr] = ask.Qty
+
+		}
 		onData(depthUpdate, b.Depth)
 	}
 	b.wsDepth.Connect()
@@ -97,47 +109,47 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	b.Depth.Symbol = depthUpdate.Symbol
 	b.Depth.FinalUpdateId = depthUpdate.FinalUpdateId
 	b.Depth.LastFinalUpdateId = depthUpdate.LastFinalUpdateId
-	//如果depthUpdate.Asks 的 price也存在 b.Depth.Asks 中，就更新 qty，否则添加
+	//先把depthUpdate.Asks 转map[string]float64
+	askMap := make(map[string]float64)
+	for _, ask := range b.Depth.Asks {
+		askMap[fmt.Sprintf("%f", ask.Price)] = ask.Qty
+	}
+	//更新数据
 	for _, ask := range depthUpdate.Asks {
-		exist := false
-		for _, item := range b.Depth.Asks {
-			if item.Price == ask.Price {
-				item.Qty = ask.Qty
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			b.Depth.Asks = append(b.Depth.Asks, ask)
-		}
+		askMap[fmt.Sprintf("%f", ask.Price)] = ask.Qty
 	}
-	//如果depthUpdate.Bids 的 price也存在 b.Depth.Bids 中，就更新 qty，否则添加
+	//把askMap 转 b.Depth.Asks
+	b.Depth.Asks = make([]*data.BookItem, 0)
+	for price, qty := range askMap {
+		if qty == 0 {
+			continue
+		}
+		b.Depth.Asks = append(b.Depth.Asks, &data.BookItem{
+			Price: util.StrToFloat64(price),
+			Qty:   qty,
+		})
+	}
+	//先把depthUpdate.Bids 转map[string]float64
+	bidMap := make(map[string]float64)
+	for _, bid := range b.Depth.Bids {
+		bidMap[fmt.Sprintf("%f", bid.Price)] = bid.Qty
+	}
+	//更新数据
 	for _, bid := range depthUpdate.Bids {
-		exist := false
-		for _, item := range b.Depth.Bids {
-			if item.Price == bid.Price {
-				item.Qty = bid.Qty
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			b.Depth.Bids = append(b.Depth.Bids, bid)
-		}
+		bidMap[fmt.Sprintf("%f", bid.Price)] = bid.Qty
 	}
-	//去除b.Depth.Bids 和 b.Depth.Aids  中 qty 为 0 的项
-	for i := 0; i < len(b.Depth.Bids); i++ {
-		if b.Depth.Bids[i].Qty == 0 {
-			b.Depth.Bids = append(b.Depth.Bids[:i], b.Depth.Bids[i+1:]...)
-			i--
+	//把bidMap 转 b.Depth.Bids
+	b.Depth.Bids = make([]*data.BookItem, 0)
+	for price, qty := range bidMap {
+		if qty == 0 {
+			continue
 		}
+		b.Depth.Bids = append(b.Depth.Bids, &data.BookItem{
+			Price: util.StrToFloat64(price),
+			Qty:   qty,
+		})
 	}
-	for i := 0; i < len(b.Depth.Asks); i++ {
-		if b.Depth.Asks[i].Qty == 0 {
-			b.Depth.Asks = append(b.Depth.Asks[:i], b.Depth.Asks[i+1:]...)
-			i--
-		}
-	}
+
 	//对b.Depth.Bids 和 b.Depth.Aids 进行排序
 	sort.Slice(b.Depth.Bids, func(i, j int) bool {
 		return b.Depth.Bids[i].Price > b.Depth.Bids[j].Price
