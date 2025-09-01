@@ -116,6 +116,9 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	//先把depthUpdate.Asks 转map[string]float64
 	askMap := make(map[string]float64)
 	for _, ask := range b.Depth.Asks {
+		if ask == nil {
+			continue
+		}
 		askMap[fmt.Sprintf("%f", ask.Price)] = ask.Qty
 	}
 	//更新数据
@@ -136,6 +139,9 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 	//先把depthUpdate.Bids 转map[string]float64
 	bidMap := make(map[string]float64)
 	for _, bid := range b.Depth.Bids {
+		if bid == nil {
+			continue
+		}
 		bidMap[fmt.Sprintf("%f", bid.Price)] = bid.Qty
 	}
 	//更新数据
