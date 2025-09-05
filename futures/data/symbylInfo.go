@@ -19,6 +19,7 @@ type SymbolInfo struct {
 	Status    string // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
 	OnlineTs  int64  // 下线时间 单位ms
 	OfflineTs int64  // 上线时间 单位ms
+	RuleType  string // 合约类型 NORMAL:正常交易 PREMARKET 盘前交易
 }
 
 func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
@@ -36,7 +37,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 				MinQty      string `json:"minQty,omitempty"`
 				MinNotional string `json:"minNotional,omitempty"`
 			} `json:"filters"`
-			Status string `json:"status"`
+			Status         string `json:"status"`
+			UnderlyingType string `json:"underlyingType"`
 		} `json:"symbols"`
 	}
 	if err := json.Unmarshal([]byte(resp), &apiResponse); err != nil {
@@ -65,6 +67,10 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 		if symbol.Status == "PRE_SETTLE" || symbol.Status == "PRE_DELIVERING" {
 			status = "PRESTOP"
 		}
+		ruleType := "NORMAL"
+		if symbol.UnderlyingType == "PREMARKET" {
+			ruleType = "PREMARKET"
+		}
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: symbol.Symbol,
 			Symbol:    symbol.Symbol,
@@ -78,6 +84,7 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			Status:    status,
 			OnlineTs:  symbol.OnboardDate,
 			OfflineTs: symbol.DeliveryDate,
+			RuleType:  ruleType,
 		})
 	}
 	return symbolInfos, nil
@@ -99,6 +106,7 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 			ExpTime  string `json:"expTime"`  //下线时间
 			ListTime string `json:"listTime"` //上线时间 毫秒
 			State    string `json:"state"`
+			RuleType string `json:"ruleType"`
 		} `json:"data"`
 	}
 
@@ -119,6 +127,10 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		}
 		onlineTs, _ := strconv.ParseInt(item.ListTime, 10, 64)
 		offlineTs, _ := strconv.ParseInt(item.ExpTime, 10, 64)
+		ruleType := "NORMAL"
+		if item.RuleType == "pre_market" {
+			ruleType = "PREMARKET"
+		}
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: item.InstId,
 			Symbol:    symbol,
@@ -131,6 +143,7 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 			Status:    status,
 			OnlineTs:  onlineTs,
 			OfflineTs: offlineTs,
+			RuleType:  ruleType,
 		})
 	}
 	return symbolInfos, nil
