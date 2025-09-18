@@ -206,3 +206,19 @@ func (b *Broker) initDepth(symbol string) {
 	b.Depth = bndata.TransferBinanceDepthRes(depth)
 	fmt.Println("初始化获取到快照asks长度:", len(b.Depth.Asks), "bids长度:", len(b.Depth.Bids))
 }
+
+func (b *Broker) GetPositions() ([]*data.Position, error) {
+	params := map[string]interface{}{}
+	resp, err := b.Api.Account(params, b.ApiInfo)
+	if err != nil {
+		fmt.Println("binance account err:", err)
+		return nil, err
+	}
+	var account bndata.AccountRes
+	err = json.Unmarshal([]byte(resp), &account)
+	if err != nil {
+		fmt.Println("binance account unmarshal err:", err)
+		return nil, err
+	}
+	return bndata.TransferBinanceAccountResToPos(account), err
+}

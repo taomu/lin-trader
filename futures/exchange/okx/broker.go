@@ -1,10 +1,12 @@
 package okx
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
+	okdata "github.com/taomu/lin-trader/futures/exchange/okx/data"
 	"github.com/taomu/lin-trader/pkg/types"
 )
 
@@ -65,4 +67,19 @@ func (b *Broker) UnSubDepth(symbol string) {
 	// }
 	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth@100ms"],"id": 1}`
 	// b.wsDepth.Push(msg)
+}
+
+func (b *Broker) GetPositions() ([]*data.Position, error) {
+	resp, err := NewRestApi().GetPositions(map[string]interface{}{
+		"instType": "SWAP",
+	}, b.ApiInfo)
+	if err != nil {
+		return nil, err
+	}
+	var positionsRes okdata.PositionsRes
+	if err := json.Unmarshal([]byte(resp), &positionsRes); err != nil {
+		return nil, err
+	}
+	positions := okdata.TransformPositionToPos(positionsRes)
+	return positions, nil
 }

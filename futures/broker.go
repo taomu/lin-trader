@@ -21,6 +21,7 @@ type BrokerPublic interface {
 }
 
 type BrokerPrivate interface {
+	GetPositions() ([]*data.Position, error) //获取持仓信息
 }
 
 type Broker interface {
