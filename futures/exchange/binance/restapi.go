@@ -1,8 +1,16 @@
 package binance
 
 import (
+	"crypto"
 	"crypto/hmac"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,57 +33,118 @@ func NewRestApi() *RestApi {
 	}
 }
 
-func (ra *RestApi) createSign(secretKey string, params url.Values) string {
-	// 币安签名方式：对查询字符串进行HMAC SHA256签名
-	message := params.Encode()
-	h := hmac.New(sha256.New, []byte(secretKey))
-	h.Write([]byte(message))
-	return fmt.Sprintf("%x", h.Sum(nil)) // 币安使用16进制格式签名
+// HMAC-SHA256, 返回 hex 小写
+func createHMACSignatureHex(secret, payload string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(payload))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
-	var req *http.Request
-	var err error
+// 尝试解析 PEM (PKCS#8 或 PKCS#1) 并用 RSA PKCS1v1.5+SHA256 签名，返回 base64 (未 url-encode)
+func createRSASignBase64(privateKeyPEM []byte, payload string) (string, error) {
+	block, _ := pem.Decode(privateKeyPEM)
+	if block == nil {
+		return "", errors.New("invalid private key PEM")
+	}
 
-	// 构建完整URL
-	fullURL := ra.host + path
+	var priv *rsa.PrivateKey
+	// 先尝试 PKCS#8
+	if parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+		if k, ok := parsed.(*rsa.PrivateKey); ok {
+			priv = k
+		} else {
+			return "", errors.New("pkcs8 key is not RSA")
+		}
+	} else {
+		// 再尝试 PKCS#1
+		if k, err2 := x509.ParsePKCS1PrivateKey(block.Bytes); err2 == nil {
+			priv = k
+		} else {
+			return "", fmt.Errorf("parse private key failed: %v / %v", err, err2)
+		}
+	}
+
+	h := sha256.Sum256([]byte(payload))
+	sig, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, h[:])
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(sig), nil
+}
+
+// 统一发送函数（支持 GET/DELETE 将参数放 URL，POST/PUT 将参数放 body (form-urlencoded)）
+// 若 apiInfo != nil 则会自动加 timestamp/recvWindow（如果未提供），并签名（默认 HMAC；若 apiInfo.Secret 看起来像 PEM，则尝试 RSA）
+func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
 	method = strings.ToUpper(method)
 
-	// 转换参数为 url.Values
-	queryParams := url.Values{}
+	// 转成 url.Values（保证 deterministic order）
+	values := url.Values{}
 	for k, v := range params {
-		queryParams.Add(k, fmt.Sprintf("%v", v))
+		values.Set(k, fmt.Sprintf("%v", v))
 	}
 
-	// 处理需要签名的接口
+	// 需要签名的接口：加入 timestamp（毫秒）与默认 recvWindow（可覆盖）
 	if apiInfo != nil {
-		queryParams.Add("timestamp", fmt.Sprintf("%d", time.Now().UnixNano()/1e6))
-		signature := ra.createSign(apiInfo.Secret, queryParams)
-		queryParams.Add("signature", signature)
+		if values.Get("timestamp") == "" {
+			values.Set("timestamp", fmt.Sprintf("%d", time.Now().UnixNano()/1e6))
+		}
+		// 如果调用方没传 recvWindow，默认 5000 ms（示例和建议）
+		if values.Get("recvWindow") == "" {
+			values.Set("recvWindow", "5000")
+		}
+
+		// 生成签名（在将 signature 放入 values 之前，用 values.Encode() 作为 payload）
+		payload := values.Encode()
+
+		// 简单 heuristic 判断是否 RSA PEM（如果 secret 是 PEM 文本）
+		secretTrim := strings.TrimSpace(apiInfo.Secret)
+		if strings.HasPrefix(secretTrim, "-----BEGIN") {
+			// RSA：返回 base64，需要 url-encode 放到 signature
+			base64Sig, err := createRSASignBase64([]byte(apiInfo.Secret), payload)
+			if err != nil {
+				return "", fmt.Errorf("RSA 签名失败: %v", err)
+			}
+			// url.Values.Encode 会自动做 QueryEscape，所以直接 Set(base64) 再 Encode 即可
+			values.Set("signature", base64Sig)
+		} else {
+			// HMAC：hex 小写
+			hexSig := createHMACSignatureHex(apiInfo.Secret, payload)
+			values.Set("signature", hexSig)
+		}
 	}
+
+	var req *http.Request
+	var err error
+	fullURL := ra.host + path
 
 	if method == "GET" || method == "DELETE" {
-		// GET/DELETE 参数放在 URL
-		fullURL = fullURL + "?" + queryParams.Encode()
+		qs := values.Encode()
+		if qs != "" {
+			fullURL = fullURL + "?" + qs
+		}
 		req, err = http.NewRequest(method, fullURL, nil)
-	} else if method == "POST" {
-		// POST 参数放在 body (form-url-encoded)
-		req, err = http.NewRequest(method, fullURL, strings.NewReader(queryParams.Encode()))
+	} else if method == "POST" || method == "PUT" {
+		// POST/PUT: 使用 form-urlencoded body（不要用 JSON）
+		body := values.Encode()
+		req, err = http.NewRequest(method, fullURL, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	} else {
-		return "", fmt.Errorf("不支持的HTTP方法: %s", method)
+		return "", fmt.Errorf("unsupported http method: %s", method)
 	}
-
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %v", err)
 	}
 
-	// 设置 API KEY
-	if apiInfo != nil {
+	// API key header（不管 HMAC 还是 RSA 都需要）
+	if apiInfo != nil && apiInfo.Key != "" {
 		req.Header.Set("X-MBX-APIKEY", apiInfo.Key)
 	}
 
-	// 发送请求
+	// 调试日志（必要时打开）：打印最终 payload、签名、请求 URL/Body，便于与 openssl/curl 输出比对
+	//fmt.Println("DEBUG payload:", values.Encode())
+	//fmt.Println("DEBUG request url:", req.URL.String())
+	//if method == "POST" { bodyBytes, _ := io.ReadAll(req.Body); fmt.Println("DEBUG body:", string(bodyBytes)); req.Body = io.NopCloser(strings.NewReader(string(bodyBytes))) }
+
 	resp, err := ra.httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("请求发送失败: %v", err)
