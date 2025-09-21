@@ -27,73 +27,77 @@ func NewRestApi() *RestApi {
 	}
 }
 
-func (ra *RestApi) createSign(timestamp, method, requestPath, secretKey, body string) string {
-	message := timestamp + method + requestPath + body
-	h := hmac.New(sha256.New, []byte(secretKey))
-	h.Write([]byte(message))
-	return base64.StdEncoding.EncodeToString(h.Sum(nil))
-}
-
 func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
-	var req *http.Request
-	var err error
-
-	// 构建完整URL
-	fullURL := ra.host + path
 	method = strings.ToUpper(method)
-	var body string
 
-	// 处理GET请求参数
-	if method == "GET" && len(params) > 0 {
-		query := url.Values{}
-		for k, v := range params {
-			query.Add(k, fmt.Sprintf("%v", v))
+	// --------- 1) 构建 requestPath ---------
+	requestPath := path
+	fullURL := ra.host + path
+	if method == "GET" || method == "DELETE" {
+		if len(params) > 0 {
+			q := url.Values{}
+			for k, v := range params {
+				q.Add(k, fmt.Sprintf("%v", v))
+			}
+			query := q.Encode()
+			requestPath = path + "?" + query
+			fullURL = fullURL + "?" + query
 		}
-		fullURL = fullURL + "?" + query.Encode()
-	} else if method == "POST" && len(params) > 0 {
-		jsonData, err2 := json.Marshal(params)
-		if err2 != nil {
-			return "", fmt.Errorf("JSON编码失败: %v", err2)
-		}
-		body = string(jsonData)
 	}
 
-	// 创建HTTP请求
-	req, err = http.NewRequest(method, fullURL, strings.NewReader(body))
+	// --------- 2) 构建 body ---------
+	bodyStr := ""
+	if method == "POST" || method == "PUT" {
+		if len(params) > 0 {
+			b, err := json.Marshal(params)
+			if err != nil {
+				return "", fmt.Errorf("JSON编码失败: %v", err)
+			}
+			bodyStr = string(b)
+		}
+	}
+
+	// --------- 3) 创建请求 ---------
+	var req *http.Request
+	var err error
+	if method == "GET" || method == "DELETE" {
+		req, err = http.NewRequest(method, fullURL, nil)
+	} else {
+		req, err = http.NewRequest(method, fullURL, strings.NewReader(bodyStr))
+		req.Header.Set("Content-Type", "application/json")
+	}
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %v", err)
 	}
 
-	// 设置请求头
-	if method == "POST" {
+	// --------- 4) 设置认证头 ---------
+	if apiInfo != nil {
+		timestamp := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
+		prehash := timestamp + method + requestPath + bodyStr
+
+		mac := hmac.New(sha256.New, []byte(apiInfo.Secret))
+		mac.Write([]byte(prehash))
+		sign := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+
+		req.Header.Set("OK-ACCESS-KEY", apiInfo.Key)
+		req.Header.Set("OK-ACCESS-SIGN", sign)
+		req.Header.Set("OK-ACCESS-TIMESTAMP", timestamp)
+		req.Header.Set("OK-ACCESS-PASSPHRASE", apiInfo.Passphrase)
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// 处理需要认证的请求
-	if apiInfo != nil {
-		timestamp := time.Now().UTC().Format(time.RFC3339)
-		sign := ra.createSign(timestamp, method, path, apiInfo.Secret, body)
-
-		req.Header.Set("OK-ACCESS-KEY", apiInfo.Key)
-		req.Header.Set("OK-ACCESS-PASSPHRASE", apiInfo.Passphrase)
-		req.Header.Set("OK-ACCESS-TIMESTAMP", timestamp)
-		req.Header.Set("OK-ACCESS-SIGN", sign)
-	}
-
-	// 发送请求
+	// --------- 5) 发送请求 ---------
 	resp, err := ra.httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("请求发送失败: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// 读取响应
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("读取响应失败: %v", err)
 	}
 
-	// 检查HTTP状态码
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(respBody))
 	}
