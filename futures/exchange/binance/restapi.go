@@ -3,7 +3,6 @@ package binance
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,52 +40,39 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	// 构建完整URL
 	fullURL := ra.host + path
 	method = strings.ToUpper(method)
-	var body string
 
-	// 转换参数为url.Values
+	// 转换参数为 url.Values
 	queryParams := url.Values{}
 	for k, v := range params {
 		queryParams.Add(k, fmt.Sprintf("%v", v))
 	}
 
-	// 添加时间戳(币安API要求)
+	// 处理需要签名的接口
 	if apiInfo != nil {
 		queryParams.Add("timestamp", fmt.Sprintf("%d", time.Now().UnixNano()/1e6))
+		signature := ra.createSign(apiInfo.Secret, queryParams)
+		queryParams.Add("signature", signature)
 	}
 
-	// 处理GET请求参数
-	if method == "GET" {
-		if apiInfo != nil {
-			// 添加签名
-			queryParams.Add("signature", ra.createSign(apiInfo.Secret, queryParams))
-		}
+	if method == "GET" || method == "DELETE" {
+		// GET/DELETE 参数放在 URL
 		fullURL = fullURL + "?" + queryParams.Encode()
+		req, err = http.NewRequest(method, fullURL, nil)
 	} else if method == "POST" {
-		// POST请求处理
-		if apiInfo != nil {
-			queryParams.Add("signature", ra.createSign(apiInfo.Secret, queryParams))
-		}
-		jsonData, err2 := json.Marshal(params)
-		if err2 != nil {
-			return "", fmt.Errorf("JSON编码失败: %v", err2)
-		}
-		body = string(jsonData)
+		// POST 参数放在 body (form-url-encoded)
+		req, err = http.NewRequest(method, fullURL, strings.NewReader(queryParams.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	} else {
+		return "", fmt.Errorf("不支持的HTTP方法: %s", method)
 	}
 
-	// 创建HTTP请求
-	req, err = http.NewRequest(method, fullURL, strings.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("创建请求失败: %v", err)
 	}
 
-	// 设置请求头
-	if method == "POST" {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	// 处理需要认证的请求
+	// 设置 API KEY
 	if apiInfo != nil {
-		req.Header.Set("X-MBX-APIKEY", apiInfo.Key) // 币安使用X-MBX-APIKEY头
+		req.Header.Set("X-MBX-APIKEY", apiInfo.Key)
 	}
 
 	// 发送请求
@@ -96,13 +82,11 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	}
 	defer resp.Body.Close()
 
-	// 读取响应
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("读取响应失败: %v", err)
 	}
 
-	// 检查HTTP状态码
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(respBody))
 	}
