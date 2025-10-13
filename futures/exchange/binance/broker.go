@@ -31,8 +31,12 @@ func NewBroker(apiInfo *types.ApiInfo) *Broker {
 func (b *Broker) Test() {
 	fmt.Println("binance test")
 }
-func (b *Broker) GetPremium() ([]data.Premium, error) {
-	resp, err := NewRestApi().PremiumIndex(map[string]interface{}{})
+func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
+	params := map[string]interface{}{}
+	if symbol != "" {
+		params["symbol"] = symbol
+	}
+	resp, err := b.Api.PremiumIndex(params)
 	if err != nil {
 		return nil, err
 	}
@@ -40,14 +44,14 @@ func (b *Broker) GetPremium() ([]data.Premium, error) {
 }
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	params := map[string]interface{}{}
-	resp, err := NewRestApi().FundingInfo(params)
+	resp, err := b.Api.FundingInfo(params)
 	if err != nil {
 		return nil, err
 	}
 	return bndata.TransferBinanceFundingInfo(resp)
 }
 func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
-	resp, err := NewRestApi().ExchangeInfo(map[string]interface{}{})
+	resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}

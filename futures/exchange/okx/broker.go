@@ -17,10 +17,14 @@ type Broker struct {
 func (b *Broker) Test() {
 	fmt.Println("okx test")
 }
-func (b *Broker) GetPremium() ([]data.Premium, error) {
-	resp, err := NewRestApi().GetPremium(map[string]interface{}{
-		"instId": "ANY",
-	})
+func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
+	params := map[string]interface{}{
+		"instId": symbol,
+	}
+	if symbol == "" {
+		params["instId"] = "ANY"
+	}
+	resp, err := NewRestApi().GetPremium(params)
 	if err != nil {
 		return nil, err
 	}
