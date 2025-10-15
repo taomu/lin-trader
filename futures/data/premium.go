@@ -17,28 +17,55 @@ type Premium struct {
 }
 
 func TransferBinancePremium(resp string) ([]Premium, error) {
-	var binanceData []struct {
-		Symbol          string `json:"symbol"`
-		LastFundingRate string `json:"lastFundingRate"`
-		NextFundingTime int64  `json:"nextFundingTime"`
-		Time            int64  `json:"time"`
-	}
-
-	if err := json.Unmarshal([]byte(resp), &binanceData); err != nil {
+	var raw json.RawMessage
+	if err := json.Unmarshal([]byte(resp), &raw); err != nil {
 		return nil, err
 	}
 
-	var premiums []Premium
-	for _, item := range binanceData {
-		rate, _ := strconv.ParseFloat(item.LastFundingRate, 64)
-		premiums = append(premiums, Premium{
-			Symbol:       item.Symbol,
-			Rate:         rate,
-			NextSettleTs: item.NextFundingTime,
-		})
-	}
+	// 检查是否以 '[' 开头来判断是数组还是单个对象
+	if len(raw) > 0 && raw[0] == '[' {
+		// 处理数组情况
+		var binanceData []struct {
+			Symbol          string `json:"symbol"`
+			LastFundingRate string `json:"lastFundingRate"`
+			NextFundingTime int64  `json:"nextFundingTime"`
+			Time            int64  `json:"time"`
+		}
 
-	return premiums, nil
+		if err := json.Unmarshal(raw, &binanceData); err != nil {
+			return nil, err
+		}
+
+		var premiums []Premium
+		for _, item := range binanceData {
+			rate, _ := strconv.ParseFloat(item.LastFundingRate, 64)
+			premiums = append(premiums, Premium{
+				Symbol:       item.Symbol,
+				Rate:         rate,
+				NextSettleTs: item.NextFundingTime,
+			})
+		}
+		return premiums, nil
+	} else {
+		// 处理单个对象情况
+		var binanceItem struct {
+			Symbol          string `json:"symbol"`
+			LastFundingRate string `json:"lastFundingRate"`
+			NextFundingTime int64  `json:"nextFundingTime"`
+			Time            int64  `json:"time"`
+		}
+
+		if err := json.Unmarshal(raw, &binanceItem); err != nil {
+			return nil, err
+		}
+
+		rate, _ := strconv.ParseFloat(binanceItem.LastFundingRate, 64)
+		return []Premium{{
+			Symbol:       binanceItem.Symbol,
+			Rate:         rate,
+			NextSettleTs: binanceItem.NextFundingTime,
+		}}, nil
+	}
 }
 
 func TransferOkxPremium(resp string) ([]Premium, error) {
