@@ -2,7 +2,6 @@ package okx
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
@@ -12,11 +11,21 @@ import (
 
 type Broker struct {
 	ApiInfo *types.ApiInfo
+	Vars    *data.BrokerVars
 }
 
-func (b *Broker) Test() {
-	fmt.Println("okx test")
+func NewBroker(apiInfo *types.ApiInfo, vars *data.BrokerVars) *Broker {
+	return &Broker{
+		ApiInfo: apiInfo,
+		Vars:    vars,
+	}
 }
+
+// 获取变量
+func (b *Broker) GetVars() *data.BrokerVars {
+	return b.Vars
+}
+
 func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
 	params := map[string]interface{}{
 		"instId": symbol,

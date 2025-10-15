@@ -18,19 +18,23 @@ type Broker struct {
 	wsDepth *util.ExcWebsocket
 	Depth   *data.Depth
 	Api     *RestApi
+	Vars    *data.BrokerVars
 }
 
-func NewBroker(apiInfo *types.ApiInfo) *Broker {
+func NewBroker(apiInfo *types.ApiInfo, vars *data.BrokerVars) *Broker {
 	return &Broker{
 		ApiInfo: apiInfo,
 		WsUrl:   "wss://fstream.binance.com/ws",
 		Api:     NewRestApi(),
+		Vars:    vars,
 	}
 }
 
-func (b *Broker) Test() {
-	fmt.Println("binance test")
+// 获取变量
+func (b *Broker) GetVars() *data.BrokerVars {
+	return b.Vars
 }
+
 func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
 	params := map[string]interface{}{}
 	if symbol != "" {
