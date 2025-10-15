@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"strconv"
+	"time"
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
@@ -19,6 +21,7 @@ type Broker struct {
 	Depth   *data.Depth
 	Api     *RestApi
 	Vars    *data.BrokerVars
+	wsAccount *util.ExcWebsocket
 }
 
 func NewBroker(apiInfo *types.ApiInfo, vars *data.BrokerVars) *Broker {
@@ -229,4 +232,111 @@ func (b *Broker) GetPositions() ([]*data.Position, error) {
 		return nil, err
 	}
 	return bndata.TransferBinanceAccountResToPos(account), err
+}
+
+// 订阅账户信息推送，维护 Vars 中的仓位与资金
+func (b *Broker) SubAccount() {
+	// 1) 获取 listenKey
+	lkResp, err := b.Api.StartUserDataStream(b.ApiInfo.Key)
+	if err != nil {
+		fmt.Println("start user data stream err:", err)
+		return
+	}
+	var lk struct {
+		ListenKey string `json:"listenKey"`
+	}
+	if err := json.Unmarshal([]byte(lkResp), &lk); err != nil || lk.ListenKey == "" {
+		fmt.Println("parse listenKey err:", err, "resp:", lkResp)
+		return
+	}
+
+	// 2) 建立账户 WebSocket
+	wsURL := "wss://fstream.binance.com/ws/" + lk.ListenKey
+	b.wsAccount = util.NewExcWebsocket(wsURL)
+	b.wsAccount.OnConnect = func() {
+		fmt.Println("binance account connect")
+	}
+	b.wsAccount.OnMessage = func(msg string) {
+		// 检测事件类型
+		var header struct {
+			EventType string `json:"e"`
+		}
+		if err := json.Unmarshal([]byte(msg), &header); err != nil {
+			return
+		}
+		if header.EventType != "ACCOUNT_UPDATE" {
+			return
+		}
+
+		// 解析 ACCOUNT_UPDATE
+		var accUpdate struct {
+			EventType string `json:"e"`
+			EventTime int64  `json:"E"`
+			Acc       struct {
+				Balances  []struct {
+					Asset string `json:"a"`
+					Wb    string `json:"wb"` // 钱包余额
+					Cw    string `json:"cw"` // Cross Wallet（用作可用余额近似）
+				} `json:"B"`
+				Positions []struct {
+					Symbol string `json:"s"`
+					Pa     string `json:"pa"` // 持仓数量
+					Ep     string `json:"ep"` // 开仓均价
+					Up     string `json:"up"` // 未实现盈亏
+					Ps     string `json:"ps"` // 持仓方向：BOTH/LONG/SHORT
+				} `json:"P"`
+			} `json:"a"`
+		}
+		if err := json.Unmarshal([]byte(msg), &accUpdate); err != nil {
+			fmt.Println("account update unmarshal err:", err)
+			return
+		}
+
+		// 更新资金（USDT）
+		for _, binfo := range accUpdate.Acc.Balances {
+			if binfo.Asset == "USDT" {
+				if v, err := strconv.ParseFloat(binfo.Wb, 64); err == nil {
+					b.Vars.BalanceAll = v
+				}
+				if v, err := strconv.ParseFloat(binfo.Cw, 64); err == nil {
+					b.Vars.BalanceAvail = v
+				}
+				break
+			}
+		}
+
+		// 更新仓位
+		positions := make([]*data.Position, 0, len(accUpdate.Acc.Positions))
+		for _, p := range accUpdate.Acc.Positions {
+			pa, _ := strconv.ParseFloat(p.Pa, 64)
+			if pa == 0 {
+				continue
+			}
+			ep, _ := strconv.ParseFloat(p.Ep, 64)
+			up, _ := strconv.ParseFloat(p.Up, 64)
+			positions = append(positions, &data.Position{
+				Symbol:           p.Symbol,
+				PosSide:          p.Ps,
+				PosAmt:           pa,
+				EntryPrice:       ep,
+				UnrealizedProfit: up,
+			})
+		}
+		b.Vars.Positions = positions
+	}
+	if err := b.wsAccount.Connect(); err != nil {
+		fmt.Println("binance account ws connect err:", err)
+		return
+	}
+
+	// 3) 保活 listenKey（每 30 分钟）
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := b.Api.KeepaliveUserDataStream(b.ApiInfo.Key, lk.ListenKey); err != nil {
+				fmt.Println("keepalive listenKey err:", err)
+			}
+		}
+	}()
 }

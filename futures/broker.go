@@ -24,6 +24,7 @@ type BrokerPublic interface {
 // 交易所私有方法
 type BrokerPrivate interface {
 	GetPositions() ([]*data.Position, error) //获取持仓信息
+	SubAccount()                             //订阅账户信息推送
 }
 
 // 获取变量

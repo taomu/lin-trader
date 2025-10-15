@@ -198,3 +198,53 @@ func (ra *RestApi) Account(params map[string]interface{}, apiInfo *types.ApiInfo
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+// 获取用户数据流 listenKey（仅需 API Key，不签名）
+func (ra *RestApi) StartUserDataStream(apiKey string) (string, error) {
+	fullURL := ra.host + "/fapi/v1/listenKey"
+	req, err := http.NewRequest("POST", fullURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("创建请求失败: %v", err)
+	}
+	req.Header.Set("X-MBX-APIKEY", apiKey)
+
+	resp, err := ra.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("请求发送失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("读取响应失败: %v", err)
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(body))
+	}
+	return string(body), nil
+}
+
+// 保活用户数据流 listenKey（仅需 API Key，不签名）
+func (ra *RestApi) KeepaliveUserDataStream(apiKey, listenKey string) error {
+	fullURL := ra.host + "/fapi/v1/listenKey"
+	values := url.Values{}
+	values.Set("listenKey", listenKey)
+	req, err := http.NewRequest("PUT", fullURL, strings.NewReader(values.Encode()))
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %v", err)
+	}
+	req.Header.Set("X-MBX-APIKEY", apiKey)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := ra.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("请求发送失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
