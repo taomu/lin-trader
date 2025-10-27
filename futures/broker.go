@@ -23,18 +23,13 @@ type BrokerPublic interface {
 // 交易所私有方法
 type BrokerPrivate interface {
 	GetPositions() ([]*data.Position, error) //获取持仓信息
-	SubAccount()                             //订阅账户信息推送
-}
-
-// 获取变量
-type BrokerVarsGetter interface {
-	GetVars() *data.BrokerVars //获取所有变量
+	SubAccount()
+	PlaceOrder(order *data.Order) error // 下单
 }
 
 type Broker interface {
 	BrokerPublic
 	BrokerPrivate
-	BrokerVarsGetter
 }
 
 func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {
@@ -43,12 +38,11 @@ func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, e
 		Secret:     apiSecret,
 		Passphrase: apiPass,
 	}
-	vars := &data.BrokerVars{}
 	switch plat {
 	case lintypes.PLAT_BINANCE:
-		return binance.NewBroker(apiInfo, vars), nil
+		return binance.NewBroker(apiInfo, nil), nil
 	case lintypes.PLAT_OKX:
-		return okx.NewBroker(apiInfo, vars), nil
+		return okx.NewBroker(apiInfo), nil
 	default:
 		return nil, fmt.Errorf("unknown platform: %s", plat)
 	}

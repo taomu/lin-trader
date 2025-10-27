@@ -1,14 +1,14 @@
 package okx
 
 import (
-	"encoding/json"
-	"strconv"
-	"strings"
-	"time"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
@@ -18,21 +18,23 @@ import (
 )
 
 type Broker struct {
-	ApiInfo *lintypes.ApiInfo
-	Vars    *data.BrokerVars
-	wsAccount *util.ExcWebsocket
+	ApiInfo      *lintypes.ApiInfo
+	wsAccount    *util.ExcWebsocket
+	Api          *RestApi
+	symbolInfos  map[string]data.SymbolInfo // 所有交易对信息
+	Positions    []*data.Position           //持仓信息
+	BalanceAvail float64                    //可用余额
+	BalanceAll   float64                    //总余额
 }
 
-func NewBroker(apiInfo *lintypes.ApiInfo, vars *data.BrokerVars) *Broker {
+func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
+	symbolInfos := make(map[string]data.SymbolInfo)
+	api := NewRestApi()
 	return &Broker{
-		ApiInfo: apiInfo,
-		Vars:    vars,
+		ApiInfo:     apiInfo,
+		symbolInfos: symbolInfos,
+		Api:         api,
 	}
-}
-
-// 获取变量
-func (b *Broker) GetVars() *data.BrokerVars {
-	return b.Vars
 }
 
 func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
@@ -42,7 +44,7 @@ func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
 	if symbol == "" {
 		params["instId"] = "ANY"
 	}
-	resp, err := NewRestApi().GetPremium(params)
+	resp, err := b.Api.GetPremium(params)
 	if err != nil {
 		return nil, err
 	}
@@ -201,16 +203,16 @@ func (b *Broker) SubAccount() {
 				}
 				// 优先使用 availEq/totalEq
 				if v, err := strconv.ParseFloat(ad.TotalEq, 64); err == nil {
-					b.Vars.BalanceAll = v
+					b.BalanceAll = v
 				}
 				if v, err := strconv.ParseFloat(ad.AvailEq, 64); err == nil {
-					b.Vars.BalanceAvail = v
+					b.BalanceAvail = v
 				}
 				// 如果有USDT详情，进一步精确可用余额
 				for _, det := range ad.Details {
 					if det.Ccy == "USDT" {
 						if v, err := strconv.ParseFloat(det.AvailBal, 64); err == nil {
-							b.Vars.BalanceAvail = v
+							b.BalanceAvail = v
 						}
 						break
 					}
@@ -249,7 +251,7 @@ func (b *Broker) SubAccount() {
 					EntryPrice: entryPrice,
 				})
 			}
-			b.Vars.Positions = positions
+			b.Positions = positions
 		default:
 			// ignore other channels
 		}
@@ -259,4 +261,47 @@ func (b *Broker) SubAccount() {
 		fmt.Println("okx account ws connect err:", err)
 		return
 	}
+}
+
+func (b *Broker) PlaceOrder(order *data.Order) error {
+	params, err := data.ToOkxOrder(order, b.toOkxSymbol, b.symbolInfos[order.Symbol])
+	if err != nil {
+		return err
+	}
+	fmt.Println("okx place order params:", params)
+	resp, err := b.Api.PlaceOrder(params, b.ApiInfo)
+	if err != nil {
+		return err
+	}
+	orderResp, err := okdata.ParseOrderResp(resp)
+	if err != nil {
+		return err
+	}
+	if orderResp.Code != "0" {
+		return fmt.Errorf("okx place order error: %s", orderResp.Msg)
+	}
+	return nil
+}
+
+func (b *Broker) toOkxSymbol(symbol string) (string, error) {
+	if len(symbol) < 4 {
+		return symbol, nil
+	}
+	last4 := symbol[len(symbol)-4:]
+	if last4 == "USDT" || last4 == "USDC" {
+		return strings.ReplaceAll(symbol, last4, last4+"-SWAP"), nil
+	}
+	return "", fmt.Errorf("toOkxSymbol error: %s", symbol)
+}
+
+func (b *Broker) toCommonSymbol(symbol string) (string, error) {
+	//根据-分割字符串
+	parts := strings.Split(symbol, "-")
+	if len(parts) != 3 {
+		return "", fmt.Errorf("toCommonSymbol error: %s", symbol)
+	}
+	if parts[2] != "SWAP" {
+		return "", fmt.Errorf("toCommonSymbol error: %s", symbol)
+	}
+	return parts[0] + parts[1], nil
 }

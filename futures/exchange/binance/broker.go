@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/taomu/lin-trader/futures/data"
@@ -15,12 +15,12 @@ import (
 )
 
 type Broker struct {
-	ApiInfo *lintypes.ApiInfo
-	WsUrl   string
-	wsDepth *util.ExcWebsocket
-	Depth   *data.Depth
-	Api     *RestApi
-	Vars    *data.BrokerVars
+	ApiInfo   *lintypes.ApiInfo
+	WsUrl     string
+	wsDepth   *util.ExcWebsocket
+	Depth     *data.Depth
+	Api       *RestApi
+	Vars      *data.BrokerVars
 	wsAccount *util.ExcWebsocket
 }
 
@@ -273,7 +273,7 @@ func (b *Broker) SubAccount() {
 			EventType string `json:"e"`
 			EventTime int64  `json:"E"`
 			Acc       struct {
-				Balances  []struct {
+				Balances []struct {
 					Asset string `json:"a"`
 					Wb    string `json:"wb"` // 钱包余额
 					Cw    string `json:"cw"` // Cross Wallet（用作可用余额近似）
@@ -339,4 +339,8 @@ func (b *Broker) SubAccount() {
 			}
 		}
 	}()
+}
+
+func (b *Broker) PlaceOrder(order *data.Order) error {
+	return nil
 }

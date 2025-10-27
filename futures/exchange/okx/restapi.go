@@ -105,26 +105,37 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	return string(respBody), nil
 }
 
+// 获取24小时tick数据
 func (ra *RestApi) Tickers24h(params map[string]interface{}) (string, error) {
 	url := "/api/v5/market/tickers"
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)
 }
 
+// 获取所有合约交易对信息
 func (ra *RestApi) Instruments(params map[string]interface{}) (string, error) {
 	url := "/api/v5/public/instruments"
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)
 }
 
+// 获取持仓信息
 func (ra *RestApi) GetPositions(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	url := "/api/v5/account/positions"
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
 
+// 获取资金费率信息
 func (ra *RestApi) GetPremium(params map[string]interface{}) (string, error) {
 	url := "/api/v5/public/funding-rate"
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)
+}
+
+// 提交订单
+func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
+	url := "/api/v5/trade/order"
+	method := "POST"
+	return ra.sendRequest(url, method, params, apiInfo)
 }

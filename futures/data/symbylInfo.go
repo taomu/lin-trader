@@ -2,24 +2,23 @@ package data
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 )
 
 type SymbolInfo struct {
-	SymbolOri string // 原始交易对
-	Symbol    string // 标准交易对
-	CtVal     string // 合约面值
-	PricePrec string // 价格精度
-	QtyPrec   string // 数量精度
-	LotPrec   string // 张数精度
-	MinLot    string // 最小下单张数
-	MinQty    string // 最小下单数量
-	Status    string // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
-	OnlineTs  int64  // 下线时间 单位ms
-	OfflineTs int64  // 上线时间 单位ms
-	RuleType  string // 合约类型 NORMAL:正常交易 PREMARKET 盘前交易
+	SymbolOri string  // 原始交易对
+	Symbol    string  // 标准交易对
+	CtVal     float64 // 合约面值
+	PricePrec int     // 价格精度
+	QtyPrec   int     // 数量精度
+	LotPrec   int     // 张数精度
+	MinLot    float64 // 最小下单张数
+	MinQty    float64 // 最小下单数量
+	Status    string  // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
+	OnlineTs  int64   // 下线时间 单位ms
+	OfflineTs int64   // 上线时间 单位ms
+	RuleType  string  // 合约类型 NORMAL:正常交易 PREMARKET 盘前交易
 }
 
 func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
@@ -55,6 +54,10 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 				break
 			}
 		}
+		minQtyFloat, err := strconv.ParseFloat(minQty, 64)
+		if err != nil {
+			return nil, err
+		}
 		status := "TRADING"
 		if symbol.Status == "PENDING_TRADING" {
 			status = "PREOPEN"
@@ -74,13 +77,13 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: symbol.Symbol,
 			Symbol:    symbol.Symbol,
-			PricePrec: fmt.Sprintf("%d", symbol.PricePrecision),
-			QtyPrec:   fmt.Sprintf("%d", symbol.QuantityPrecision),
-			MinQty:    minQty,
+			PricePrec: symbol.PricePrecision,
+			QtyPrec:   symbol.QuantityPrecision,
+			MinQty:    minQtyFloat,
 			// 币安没有这些字段，设为空或默认值
-			CtVal:     "",
-			LotPrec:   "",
-			MinLot:    "",
+			CtVal:     0,
+			LotPrec:   0,
+			MinLot:    0,
 			Status:    status,
 			OnlineTs:  symbol.OnboardDate,
 			OfflineTs: symbol.DeliveryDate,
@@ -131,15 +134,31 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		if item.RuleType == "pre_market" {
 			ruleType = "PREMARKET"
 		}
+		ctValFloat, err := strconv.ParseFloat(item.CtVal, 64)
+		if err != nil {
+			return nil, err
+		}
+		tickSzInt, err := strconv.Atoi(item.TickSz)
+		if err != nil {
+			return nil, err
+		}
+		lotSzInt, err := strconv.Atoi(item.LotSz)
+		if err != nil {
+			return nil, err
+		}
+		minSzFloat, err := strconv.ParseFloat(item.MinSz, 64)
+		if err != nil {
+			return nil, err
+		}
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: item.InstId,
 			Symbol:    symbol,
-			CtVal:     item.CtVal,
-			PricePrec: item.TickSz,
-			QtyPrec:   item.LotSz,
-			LotPrec:   item.LotSz,
-			MinLot:    item.MinSz,
-			MinQty:    item.MinSz,
+			CtVal:     ctValFloat,
+			PricePrec: tickSzInt,
+			QtyPrec:   lotSzInt,
+			LotPrec:   lotSzInt,
+			MinLot:    minSzFloat,
+			MinQty:    minSzFloat,
 			Status:    status,
 			OnlineTs:  onlineTs,
 			OfflineTs: offlineTs,
