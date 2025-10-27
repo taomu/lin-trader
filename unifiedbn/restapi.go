@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 type RestApi struct {
@@ -33,7 +33,7 @@ func createHMACSignatureHex(secret, payload string) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	method = strings.ToUpper(method)
 
 	values := url.Values{}
@@ -97,7 +97,7 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	return string(respBody), nil
 }
 
-func (ra *RestApi) Account(params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) Account(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	path := "/papi/v1/account"
 	method := "GET"
 	return ra.sendRequest(path, method, params, apiInfo)

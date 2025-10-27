@@ -3,14 +3,14 @@ package okx
 import (
 	"fmt"
 
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 	"github.com/taomu/lin-trader/spot/data"
 )
 
 type Broker struct {
 }
 
-func NewBroker(apiInfo *types.ApiInfo) *Broker {
+func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 	return &Broker{}
 }
 

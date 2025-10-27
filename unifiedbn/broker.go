@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 	"github.com/taomu/lin-trader/unifiedbn/data"
 )
 
@@ -40,7 +40,7 @@ type positionDetail struct {
 
 func (b *Broker) GetFuturesPositions() ([]data.Position, error) {
 	ra := NewRestApi()
-	apiInfo := &types.ApiInfo{
+	apiInfo := &lintypes.ApiInfo{
 		Key:    b.Key,
 		Secret: b.Secret,
 	}

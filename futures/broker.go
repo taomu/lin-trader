@@ -7,8 +7,7 @@ import (
 	"github.com/taomu/lin-trader/futures/exchange/binance"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
-	"github.com/taomu/lin-trader/pkg/constant"
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 // 交易所公告方法
@@ -38,17 +37,17 @@ type Broker interface {
 	BrokerVarsGetter
 }
 
-func NewBroker(plat constant.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {
-	apiInfo := &types.ApiInfo{
+func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {
+	apiInfo := &lintypes.ApiInfo{
 		Key:        apiKey,
 		Secret:     apiSecret,
 		Passphrase: apiPass,
 	}
 	vars := &data.BrokerVars{}
 	switch plat {
-	case constant.PLAT_BINANCE:
+	case lintypes.PLAT_BINANCE:
 		return binance.NewBroker(apiInfo, vars), nil
-	case constant.PLAT_OKX:
+	case lintypes.PLAT_OKX:
 		return okx.NewBroker(apiInfo, vars), nil
 	default:
 		return nil, fmt.Errorf("unknown platform: %s", plat)

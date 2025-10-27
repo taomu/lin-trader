@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 type RestApi struct {
@@ -74,7 +74,7 @@ func createRSASignBase64(privateKeyPEM []byte, payload string) (string, error) {
 
 // 统一发送函数（支持 GET/DELETE 将参数放 URL，POST/PUT 将参数放 body (form-urlencoded)）
 // 若 apiInfo != nil 则会自动加 timestamp/recvWindow（如果未提供），并签名（默认 HMAC；若 apiInfo.Secret 看起来像 PEM，则尝试 RSA）
-func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	method = strings.ToUpper(method)
 
 	// 转成 url.Values（保证 deterministic order）
@@ -169,7 +169,7 @@ func (ra *RestApi) ExchangeInfo(params map[string]interface{}) (string, error) {
 	return ra.sendRequest(url, method, params, nil)
 }
 
-func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	url := "/fapi/v1/order"
 	method := "POST"
 	return ra.sendRequest(url, method, params, apiInfo)
@@ -193,7 +193,7 @@ func (ra *RestApi) Depth(params map[string]interface{}) (string, error) {
 	return ra.sendRequest(url, method, params, nil)
 }
 
-func (ra *RestApi) Account(params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) Account(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	url := "/fapi/v3/account"
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)

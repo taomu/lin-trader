@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/pkg/types"
+	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 type RestApi struct {
@@ -34,7 +34,7 @@ func (ra *RestApi) createSign(timestamp, method, requestPath, secretKey, body st
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	var req *http.Request
 	var err error
 
@@ -113,7 +113,7 @@ func (ra *RestApi) Instruments(params map[string]interface{}) (string, error) {
 	return ra.sendRequest(url, method, params, nil)
 }
 
-func (ra *RestApi) GetPositions(params map[string]interface{}, apiInfo *types.ApiInfo) (string, error) {
+func (ra *RestApi) GetPositions(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	url := "/api/v5/account/positions"
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)
