@@ -12,3 +12,10 @@ const (
 	ORDER_TYPE_FOK       = "fok"       // 全部成交否则取消
 	ORDER_TYPE_POST_ONLY = "post_only" // 仅做maker单
 )
+
+const (
+	ORDER_STATUS_ACCEPTED         = "accepted"         // 已接受订单
+	ORDER_STATUS_FILLED           = "filled"           // 已成交订单
+	ORDER_STATUS_CANCELED         = "canceled"         // 已取消订单
+	ORDER_STATUS_PARTIALLY_FILLED = "partially_filled" // 部分成交订单
+)
