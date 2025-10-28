@@ -10,34 +10,34 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	okdata "github.com/taomu/lin-trader/futures/exchange/okx/data"
+	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 	"github.com/taomu/lin-trader/pkg/util"
 )
 
 type Broker struct {
+	Api          *RestApi
 	ApiInfo      *lintypes.ApiInfo
 	wsAccount    *util.ExcWebsocket
-	Api          *RestApi
-	symbolInfos  map[string]data.SymbolInfo // 所有交易对信息
-	Positions    []*data.Position           //持仓信息
-	BalanceAvail float64                    //可用余额
-	BalanceAll   float64                    //总余额
+	symbolInfos  map[string]types.SymbolInfo
+	Positions    []*types.Position //持仓信息
+	BalanceAvail float64           //可用余额
+	BalanceAll   float64           //总余额
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
-	symbolInfos := make(map[string]data.SymbolInfo)
+	symbolInfos := make(map[string]types.SymbolInfo)
 	api := NewRestApi()
 	return &Broker{
+		Api:         api,
 		ApiInfo:     apiInfo,
 		symbolInfos: symbolInfos,
-		Api:         api,
 	}
 }
 
-func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
+func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	params := map[string]interface{}{
 		"instId": symbol,
 	}
@@ -48,31 +48,31 @@ func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
 	if err != nil {
 		return nil, err
 	}
-	return data.TransferOkxPremium(resp)
+	return types.TransferOkxPremium(resp)
 }
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	return nil, nil
 }
-func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
+func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
 	resp, err := NewRestApi().Instruments(map[string]interface{}{
 		"instType": "SWAP",
 	})
 	if err != nil {
 		return nil, err
 	}
-	return data.TransferOkxSymbolInfo(resp)
+	return types.TransferOkxSymbolInfo(resp)
 }
-func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
+func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	resp, err := NewRestApi().Tickers24h(map[string]interface{}{
 		"instType": "SWAP",
 	})
 	if err != nil {
 		return nil, err
 	}
-	return data.TransferOkxTicker(resp)
+	return types.TransferOkxTicker(resp)
 }
 
-func (b *Broker) SubDepth(symbol string, onData func(updateData *data.Depth, snapData *data.Depth)) {
+func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth)) {
 	// if b.wsDepth == nil {
 	// 	b.wsDepth = util.NewExcWebsocket(b.WsUrl)
 	// }
@@ -93,7 +93,7 @@ func (b *Broker) UnSubDepth(symbol string) {
 	// b.wsDepth.Push(msg)
 }
 
-func (b *Broker) GetPositions() ([]*data.Position, error) {
+func (b *Broker) GetPositions() ([]*types.Position, error) {
 	resp, err := NewRestApi().GetPositions(map[string]interface{}{
 		"instType": "SWAP",
 	}, b.ApiInfo)
@@ -220,7 +220,7 @@ func (b *Broker) SubAccount() {
 			}
 		case "positions":
 			// 仓位
-			positions := make([]*data.Position, 0, len(env.Data))
+			positions := make([]*types.Position, 0, len(env.Data))
 			for _, d := range env.Data {
 				var p struct {
 					InstId  string `json:"instId"`
@@ -244,7 +244,7 @@ func (b *Broker) SubAccount() {
 					side = "SHORT"
 				}
 				entryPrice, _ := strconv.ParseFloat(p.AvgPx, 64)
-				positions = append(positions, &data.Position{
+				positions = append(positions, &types.Position{
 					Symbol:     symbol,
 					PosAmt:     posAmt,
 					PosSide:    side,
@@ -263,8 +263,8 @@ func (b *Broker) SubAccount() {
 	}
 }
 
-func (b *Broker) PlaceOrder(order *data.Order) error {
-	params, err := data.ToOkxOrder(order, b.toOkxSymbol, b.symbolInfos[order.Symbol])
+func (b *Broker) PlaceOrder(order *types.Order) error {
+	params, err := types.ToOkxOrder(order, b.toOkxSymbol, b.symbolInfos[order.Symbol])
 	if err != nil {
 		return err
 	}

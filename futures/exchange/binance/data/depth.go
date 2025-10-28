@@ -3,7 +3,7 @@ package data
 import (
 	"strconv"
 
-	"github.com/taomu/lin-trader/futures/data"
+	"github.com/taomu/lin-trader/futures/types"
 )
 
 // WebSocket 深度事件（现货/合约基本一致）
@@ -42,17 +42,17 @@ type DepthRes struct {
 	Asks          [][]string `json:"asks"`
 }
 
-func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
-	d := &data.Depth{
+func TransferBinanceDepthRes(depthRes DepthRes) *types.Depth {
+	d := &types.Depth{
 		Time:          depthRes.Time,
 		FinalUpdateId: depthRes.FinalUpdateID,
-		Asks:          make([]*data.BookItem, 0),
-		Bids:          make([]*data.BookItem, 0),
+		Asks:          make([]*types.BookItem, 0),
+		Bids:          make([]*types.BookItem, 0),
 	}
 	for _, bid := range depthRes.Bids {
 		price, _ := strconv.ParseFloat(bid[0], 64)
 		qty, _ := strconv.ParseFloat(bid[1], 64)
-		d.Bids = append(d.Bids, &data.BookItem{
+		d.Bids = append(d.Bids, &types.BookItem{
 			Price: price,
 			Qty:   qty,
 		})
@@ -60,7 +60,7 @@ func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
 	for _, ask := range depthRes.Asks {
 		price, _ := strconv.ParseFloat(ask[0], 64)
 		qty, _ := strconv.ParseFloat(ask[1], 64)
-		d.Asks = append(d.Asks, &data.BookItem{
+		d.Asks = append(d.Asks, &types.BookItem{
 			Price: price,
 			Qty:   qty,
 		})
@@ -68,19 +68,19 @@ func TransferBinanceDepthRes(depthRes DepthRes) *data.Depth {
 	return d
 }
 
-func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.Depth {
-	d := &data.Depth{
+func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *types.Depth {
+	d := &types.Depth{
 		Time:              depthUpdate.Time,
 		Symbol:            depthUpdate.Symbol,
 		FinalUpdateId:     depthUpdate.FinalUpdateID,
 		LastFinalUpdateId: depthUpdate.LastFinalUpdateId,
-		Asks:              make([]*data.BookItem, 0),
-		Bids:              make([]*data.BookItem, 0),
+		Asks:              make([]*types.BookItem, 0),
+		Bids:              make([]*types.BookItem, 0),
 	}
 	for _, bid := range depthUpdate.Bids {
 		price, _ := strconv.ParseFloat(bid[0], 64)
 		qty, _ := strconv.ParseFloat(bid[1], 64)
-		d.Bids = append(d.Bids, &data.BookItem{
+		d.Bids = append(d.Bids, &types.BookItem{
 			Price: price,
 			Qty:   qty,
 		})
@@ -88,7 +88,7 @@ func TransferBinanceWsDepthUpdateRes(depthUpdate WsDepthUpdateRes) *data.Depth {
 	for _, ask := range depthUpdate.Asks {
 		price, _ := strconv.ParseFloat(ask[0], 64)
 		qty, _ := strconv.ParseFloat(ask[1], 64)
-		d.Asks = append(d.Asks, &data.BookItem{
+		d.Asks = append(d.Asks, &types.BookItem{
 			Price: price,
 			Qty:   qty,
 		})

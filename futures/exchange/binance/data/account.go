@@ -3,7 +3,7 @@ package data
 import (
 	"strconv"
 
-	cmData "github.com/taomu/lin-trader/futures/data"
+	cmTypes "github.com/taomu/lin-trader/futures/types"
 )
 
 type AccountRes struct {
@@ -52,16 +52,15 @@ type Position struct {
 }
 
 // 转化结果为仓位
-func TransferBinanceAccountResToPos(accountRes AccountRes) []*cmData.Position {
-	positions := make([]*cmData.Position, 0, len(accountRes.Positions))
+func TransferBinanceAccountResToPos(accountRes AccountRes) []*cmTypes.Position {
+	positions := make([]*cmTypes.Position, 0, len(accountRes.Positions))
 	for _, p := range accountRes.Positions {
 		posAmt, _ := strconv.ParseFloat(p.PositionAmt, 64)
 		unrealizedProfit, _ := strconv.ParseFloat(p.UnrealizedProfit, 64)
-		//如果持仓数量为0, 则不添加到仓位列表
 		if posAmt == 0 {
 			continue
 		}
-		positions = append(positions, &cmData.Position{
+		positions = append(positions, &cmTypes.Position{
 			Symbol:           p.Symbol,
 			PosSide:          p.PositionSide,
 			PosAmt:           posAmt,

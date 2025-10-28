@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	cmData "github.com/taomu/lin-trader/futures/data"
+	cmTypes "github.com/taomu/lin-trader/futures/types"
 )
 
 type PositionsRes struct {
@@ -79,11 +79,11 @@ type Position struct {
 	SettledPnl             string        `json:"settledPnl"`             // 已结算收益
 }
 
-func TransformPositionToPos(positionsRes PositionsRes) []*cmData.Position {
+func TransformPositionToPos(positionsRes PositionsRes) []*cmTypes.Position {
 	if len(positionsRes.Data) == 0 {
 		return nil
 	}
-	result := make([]*cmData.Position, 0, len(positionsRes.Data))
+	result := make([]*cmTypes.Position, 0, len(positionsRes.Data))
 	for _, pos := range positionsRes.Data {
 		posAmt, err := strconv.ParseFloat(pos.Pos, 64)
 		if err != nil {
@@ -102,7 +102,7 @@ func TransformPositionToPos(positionsRes PositionsRes) []*cmData.Position {
 		if err != nil {
 			continue
 		}
-		result = append(result, &cmData.Position{
+		result = append(result, &cmTypes.Position{
 			Symbol:     symbol,
 			PosAmt:     posAmt,
 			PosSide:    posSide,

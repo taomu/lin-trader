@@ -8,37 +8,34 @@ import (
 	"strings"
 	"time"
 
-	"github.com/taomu/lin-trader/futures/data"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
+	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 	"github.com/taomu/lin-trader/pkg/util"
 )
 
 type Broker struct {
-	ApiInfo   *lintypes.ApiInfo
-	WsUrl     string
-	wsDepth   *util.ExcWebsocket
-	Depth     *data.Depth
-	Api       *RestApi
-	Vars      *data.BrokerVars
-	wsAccount *util.ExcWebsocket
+	Api          *RestApi
+	ApiInfo      *lintypes.ApiInfo
+	wsAccount    *util.ExcWebsocket
+	symbolInfos  map[string]types.SymbolInfo
+	Positions    []*types.Position //持仓信息
+	BalanceAvail float64           //可用余额
+	BalanceAll   float64           //总余额
+	wsUrl        string
+	wsDepth      *util.ExcWebsocket
+	Depth        *types.Depth
 }
 
-func NewBroker(apiInfo *lintypes.ApiInfo, vars *data.BrokerVars) *Broker {
+func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 	return &Broker{
 		ApiInfo: apiInfo,
-		WsUrl:   "wss://fstream.binance.com/ws",
+		wsUrl:   "wss://fstream.binance.com/ws",
 		Api:     NewRestApi(),
-		Vars:    vars,
 	}
 }
 
-// 获取变量
-func (b *Broker) GetVars() *data.BrokerVars {
-	return b.Vars
-}
-
-func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
+func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	params := map[string]interface{}{}
 	if symbol != "" {
 		params["symbol"] = symbol
@@ -47,7 +44,7 @@ func (b *Broker) GetPremium(symbol string) ([]data.Premium, error) {
 	if err != nil {
 		return nil, err
 	}
-	return data.TransferBinancePremium(resp)
+	return types.TransferBinancePremium(resp)
 }
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	params := map[string]interface{}{}
@@ -57,19 +54,19 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	}
 	return bndata.TransferBinanceFundingInfo(resp)
 }
-func (b *Broker) GetSymbolInfos() ([]data.SymbolInfo, error) {
+func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
 	resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}
-	return data.TransferBinanceSymbolInfo(resp)
+	return types.TransferBinanceSymbolInfo(resp)
 }
-func (b *Broker) GetTickers24h() ([]data.Ticker24H, error) {
+func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	return nil, nil
 }
-func (b *Broker) SubDepth(symbol string, onData func(updateData *data.Depth, snapData *data.Depth)) {
+func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth)) {
 	if b.wsDepth == nil {
-		b.wsDepth = util.NewExcWebsocket(b.WsUrl)
+		b.wsDepth = util.NewExcWebsocket(b.wsUrl)
 	}
 	b.wsDepth.OnConnect = func() {
 		fmt.Println("binance depth connect")
@@ -112,7 +109,7 @@ func (b *Broker) UnSubDepth(symbol string) {
 	b.wsDepth.Push(msg)
 }
 
-func (b *Broker) depthMerge(depthUpdate data.Depth) {
+func (b *Broker) depthMerge(depthUpdate types.Depth) {
 	if b.Depth == nil {
 		return
 	}
@@ -137,12 +134,12 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 		askMap[fmt.Sprintf("%f", ask.Price)] = ask.Qty
 	}
 	//把askMap 转 b.Depth.Asks
-	b.Depth.Asks = make([]*data.BookItem, 0)
+	b.Depth.Asks = make([]*types.BookItem, 0)
 	for price, qty := range askMap {
 		if qty == 0 {
 			continue
 		}
-		b.Depth.Asks = append(b.Depth.Asks, &data.BookItem{
+		b.Depth.Asks = append(b.Depth.Asks, &types.BookItem{
 			Price: util.StrToFloat64(price),
 			Qty:   qty,
 		})
@@ -160,12 +157,12 @@ func (b *Broker) depthMerge(depthUpdate data.Depth) {
 		bidMap[fmt.Sprintf("%f", bid.Price)] = bid.Qty
 	}
 	//把bidMap 转 b.Depth.Bids
-	b.Depth.Bids = make([]*data.BookItem, 0)
+	b.Depth.Bids = make([]*types.BookItem, 0)
 	for price, qty := range bidMap {
 		if qty == 0 {
 			continue
 		}
-		b.Depth.Bids = append(b.Depth.Bids, &data.BookItem{
+		b.Depth.Bids = append(b.Depth.Bids, &types.BookItem{
 			Price: util.StrToFloat64(price),
 			Qty:   qty,
 		})
@@ -218,7 +215,7 @@ func (b *Broker) initDepth(symbol string) {
 	fmt.Println("初始化获取到快照asks长度:", len(b.Depth.Asks), "bids长度:", len(b.Depth.Bids))
 }
 
-func (b *Broker) GetPositions() ([]*data.Position, error) {
+func (b *Broker) GetPositions() ([]*types.Position, error) {
 	params := map[string]interface{}{}
 	resp, err := b.Api.Account(params, b.ApiInfo)
 	if err != nil {
@@ -296,17 +293,17 @@ func (b *Broker) SubAccount() {
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {
 				if v, err := strconv.ParseFloat(binfo.Wb, 64); err == nil {
-					b.Vars.BalanceAll = v
+					b.BalanceAll = v
 				}
 				if v, err := strconv.ParseFloat(binfo.Cw, 64); err == nil {
-					b.Vars.BalanceAvail = v
+					b.BalanceAvail = v
 				}
 				break
 			}
 		}
 
 		// 更新仓位
-		positions := make([]*data.Position, 0, len(accUpdate.Acc.Positions))
+		positions := make([]*types.Position, 0, len(accUpdate.Acc.Positions))
 		for _, p := range accUpdate.Acc.Positions {
 			pa, _ := strconv.ParseFloat(p.Pa, 64)
 			if pa == 0 {
@@ -314,7 +311,7 @@ func (b *Broker) SubAccount() {
 			}
 			ep, _ := strconv.ParseFloat(p.Ep, 64)
 			up, _ := strconv.ParseFloat(p.Up, 64)
-			positions = append(positions, &data.Position{
+			positions = append(positions, &types.Position{
 				Symbol:           p.Symbol,
 				PosSide:          p.Ps,
 				PosAmt:           pa,
@@ -322,7 +319,7 @@ func (b *Broker) SubAccount() {
 				UnrealizedProfit: up,
 			})
 		}
-		b.Vars.Positions = positions
+		b.Positions = positions
 	}
 	if err := b.wsAccount.Connect(); err != nil {
 		fmt.Println("binance account ws connect err:", err)
@@ -341,6 +338,6 @@ func (b *Broker) SubAccount() {
 	}()
 }
 
-func (b *Broker) PlaceOrder(order *data.Order) error {
+func (b *Broker) PlaceOrder(order *types.Order) error {
 	return nil
 }

@@ -3,28 +3,32 @@ package futures
 import (
 	"fmt"
 
-	"github.com/taomu/lin-trader/futures/data"
 	"github.com/taomu/lin-trader/futures/exchange/binance"
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
+	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 // 交易所公告方法
 type BrokerPublic interface {
-	GetPremium(symbol string) ([]data.Premium, error)                                  //获取资金费率信息
-	GetFundingInfo() ([]bndata.FundingInfo, error)                                     //获取资金费率限制，仅用于binance
-	GetSymbolInfos() ([]data.SymbolInfo, error)                                        //获取所有合约交易对信息
-	GetTickers24h() ([]data.Ticker24H, error)                                          //获取所有合约的最新价格
-	SubDepth(symbol string, onData func(updateData *data.Depth, snapData *data.Depth)) //订阅深度数据
-	UnSubDepth(symbol string)                                                          //取消订阅深度数据
+	GetPremium(symbol string) ([]types.Premium, error)
+	GetFundingInfo() ([]bndata.FundingInfo, error)
+	GetSymbolInfos() ([]types.SymbolInfo, error)
+	GetTickers24h() ([]types.Ticker24H, error)
+	SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth))
+	UnSubDepth(symbol string)
 }
 
 // 交易所私有方法
 type BrokerPrivate interface {
-	GetPositions() ([]*data.Position, error) //获取持仓信息
+	GetPositions() ([]*types.Position, error)
 	SubAccount()
-	PlaceOrder(order *data.Order) error // 下单
+	PlaceOrder(order *types.Order) error // 下单
+}
+
+type BrokerVarsGetter interface {
+	GetVars() *types.BrokerVars
 }
 
 type Broker interface {
@@ -40,7 +44,7 @@ func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, e
 	}
 	switch plat {
 	case lintypes.PLAT_BINANCE:
-		return binance.NewBroker(apiInfo, nil), nil
+		return binance.NewBroker(apiInfo), nil
 	case lintypes.PLAT_OKX:
 		return okx.NewBroker(apiInfo), nil
 	default:

@@ -1,4 +1,4 @@
-package data
+package types
 
 type Depth struct {
 	Time              int64       `json:"ts"`

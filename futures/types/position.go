@@ -1,4 +1,4 @@
-package data
+package types
 
 type Position struct {
 	Symbol           string  `json:"symbol"`
