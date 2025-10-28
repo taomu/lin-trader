@@ -19,6 +19,8 @@ type BrokerPublic interface {
 	GetTickers24h() ([]types.Ticker24H, error)
 	SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth))
 	UnSubDepth(symbol string)
+	SetWsHost(host string)
+	SetRestHost(host string)
 }
 
 // 交易所私有方法
