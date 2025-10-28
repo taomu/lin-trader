@@ -33,6 +33,11 @@ func NewRestApi() *RestApi {
 	}
 }
 
+// SetUrl 设置 REST API 主机地址
+func (ra *RestApi) SetHost(host string) {
+	ra.host = host
+}
+
 // HMAC-SHA256, 返回 hex 小写
 func createHMACSignatureHex(secret, payload string) string {
 	mac := hmac.New(sha256.New, []byte(secret))

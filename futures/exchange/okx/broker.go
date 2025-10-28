@@ -22,6 +22,7 @@ type Broker struct {
 	Api       *RestApi
 	ApiInfo   *lintypes.ApiInfo
 	wsAccount *util.ExcWebsocket
+	wsHost    string
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
@@ -34,11 +35,20 @@ func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 		Api:     api,
 		ApiInfo: apiInfo,
 		Datas:   datas,
+		wsHost:  "wss://ws.okx.com",
 	}
 }
 
 func (b *Broker) GetDatas() *types.BrokerDatas {
 	return b.Datas
+}
+
+func (b *Broker) SetWsHost(host string) {
+	b.wsHost = host
+}
+
+func (b *Broker) SetRestHost(host string) {
+	b.Api.SetHost(host)
 }
 
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
@@ -255,7 +265,7 @@ func (b *Broker) SubAccount() {
 					EntryPrice: entryPrice,
 				})
 			}
-			b.Datas.Positions = positions		
+			b.Datas.Positions = positions
 		default:
 			// ignore other channels
 		}

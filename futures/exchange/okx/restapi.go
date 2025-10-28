@@ -27,6 +27,10 @@ func NewRestApi() *RestApi {
 	}
 }
 
+func (ra *RestApi) SetHost(host string) {
+	ra.host = host
+}
+
 func (ra *RestApi) sendRequest(path, method string, params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
 	method = strings.ToUpper(method)
 

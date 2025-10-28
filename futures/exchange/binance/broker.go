@@ -41,6 +41,14 @@ func (b *Broker) GetDatas() *types.BrokerDatas {
 	return b.Datas
 }
 
+func (b *Broker) SetWsHost(host string) {
+	b.wsUrl = host + "/ws"
+}
+
+func (b *Broker) SetRestHost(host string) {
+	b.Api.SetHost(host)
+}
+
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	params := map[string]interface{}{}
 	if symbol != "" {
