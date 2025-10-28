@@ -27,10 +27,6 @@ type BrokerPrivate interface {
 	PlaceOrder(order *types.Order) error // 下单
 }
 
-type BrokerVarsGetter interface {
-	GetVars() *types.BrokerVars
-}
-
 type Broker interface {
 	BrokerPublic
 	BrokerPrivate
