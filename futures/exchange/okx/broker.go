@@ -44,11 +44,15 @@ func (b *Broker) GetDatas() *types.BrokerDatas {
 }
 
 func (b *Broker) SetWsHost(host string) {
-	b.wsHost = host
+	if host != "" {
+		b.wsHost = host
+	}
 }
 
 func (b *Broker) SetRestHost(host string) {
-	b.Api.SetHost(host)
+	if host != "" {
+		b.Api.SetHost(host)
+	}
 }
 
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
