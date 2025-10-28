@@ -18,23 +18,27 @@ import (
 )
 
 type Broker struct {
-	Api          *RestApi
-	ApiInfo      *lintypes.ApiInfo
-	wsAccount    *util.ExcWebsocket
-	symbolInfos  map[string]types.SymbolInfo
-	Positions    []*types.Position //持仓信息
-	BalanceAvail float64           //可用余额
-	BalanceAll   float64           //总余额
+	Datas     *types.BrokerDatas
+	Api       *RestApi
+	ApiInfo   *lintypes.ApiInfo
+	wsAccount *util.ExcWebsocket
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
-	symbolInfos := make(map[string]types.SymbolInfo)
+	datas := &types.BrokerDatas{
+		SymbolInfos: make(map[string]types.SymbolInfo),
+		Positions:   make([]*types.Position, 0),
+	}
 	api := NewRestApi()
 	return &Broker{
-		Api:         api,
-		ApiInfo:     apiInfo,
-		symbolInfos: symbolInfos,
+		Api:     api,
+		ApiInfo: apiInfo,
+		Datas:   datas,
 	}
+}
+
+func (b *Broker) GetDatas() *types.BrokerDatas {
+	return b.Datas
 }
 
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
@@ -203,16 +207,16 @@ func (b *Broker) SubAccount() {
 				}
 				// 优先使用 availEq/totalEq
 				if v, err := strconv.ParseFloat(ad.TotalEq, 64); err == nil {
-					b.BalanceAll = v
+					b.Datas.BalanceAll = v
 				}
 				if v, err := strconv.ParseFloat(ad.AvailEq, 64); err == nil {
-					b.BalanceAvail = v
+					b.Datas.BalanceAvail = v
 				}
 				// 如果有USDT详情，进一步精确可用余额
 				for _, det := range ad.Details {
 					if det.Ccy == "USDT" {
 						if v, err := strconv.ParseFloat(det.AvailBal, 64); err == nil {
-							b.BalanceAvail = v
+							b.Datas.BalanceAvail = v
 						}
 						break
 					}
@@ -251,7 +255,7 @@ func (b *Broker) SubAccount() {
 					EntryPrice: entryPrice,
 				})
 			}
-			b.Positions = positions
+			b.Datas.Positions = positions		
 		default:
 			// ignore other channels
 		}
@@ -264,7 +268,7 @@ func (b *Broker) SubAccount() {
 }
 
 func (b *Broker) PlaceOrder(order *types.Order) error {
-	params, err := types.ToOkxOrder(order, b.toOkxSymbol, b.symbolInfos[order.Symbol])
+	params, err := types.ToOkxOrder(order, b.toOkxSymbol, b.Datas.SymbolInfos[order.Symbol])
 	if err != nil {
 		return err
 	}

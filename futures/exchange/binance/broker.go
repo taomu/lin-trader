@@ -15,24 +15,30 @@ import (
 )
 
 type Broker struct {
-	Api          *RestApi
-	ApiInfo      *lintypes.ApiInfo
-	wsAccount    *util.ExcWebsocket
-	symbolInfos  map[string]types.SymbolInfo
-	Positions    []*types.Position //持仓信息
-	BalanceAvail float64           //可用余额
-	BalanceAll   float64           //总余额
-	wsUrl        string
-	wsDepth      *util.ExcWebsocket
-	Depth        *types.Depth
+	Datas     *types.BrokerDatas
+	Api       *RestApi
+	ApiInfo   *lintypes.ApiInfo
+	wsAccount *util.ExcWebsocket
+	wsUrl     string
+	wsDepth   *util.ExcWebsocket
+	Depth     *types.Depth
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
+	datas := &types.BrokerDatas{
+		SymbolInfos: make(map[string]types.SymbolInfo),
+		Positions:   make([]*types.Position, 0),
+	}
 	return &Broker{
 		ApiInfo: apiInfo,
 		wsUrl:   "wss://fstream.binance.com/ws",
 		Api:     NewRestApi(),
+		Datas:   datas,
 	}
+}
+
+func (b *Broker) GetDatas() *types.BrokerDatas {
+	return b.Datas
 }
 
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
@@ -293,10 +299,10 @@ func (b *Broker) SubAccount() {
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {
 				if v, err := strconv.ParseFloat(binfo.Wb, 64); err == nil {
-					b.BalanceAll = v
+					b.Datas.BalanceAll = v
 				}
 				if v, err := strconv.ParseFloat(binfo.Cw, 64); err == nil {
-					b.BalanceAvail = v
+					b.Datas.BalanceAvail = v
 				}
 				break
 			}
@@ -319,7 +325,7 @@ func (b *Broker) SubAccount() {
 				UnrealizedProfit: up,
 			})
 		}
-		b.Positions = positions
+		b.Datas.Positions = positions
 	}
 	if err := b.wsAccount.Connect(); err != nil {
 		fmt.Println("binance account ws connect err:", err)

@@ -12,6 +12,7 @@ import (
 
 // 交易所公告方法
 type BrokerPublic interface {
+	GetDatas() *types.BrokerDatas
 	GetPremium(symbol string) ([]types.Premium, error)
 	GetFundingInfo() ([]bndata.FundingInfo, error)
 	GetSymbolInfos() ([]types.SymbolInfo, error)
