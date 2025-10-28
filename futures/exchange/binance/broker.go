@@ -3,6 +3,7 @@ package binance
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -190,8 +191,8 @@ func (b *Broker) depthMerge(depthUpdate types.Depth) {
 		return b.Depth.Asks[i].Price < b.Depth.Asks[j].Price
 	})
 	//取前500项
-	b.Depth.Asks = b.Depth.Asks[:500]
-	b.Depth.Bids = b.Depth.Bids[:500]
+	b.Depth.Asks = b.Depth.Asks[:int(math.Min(float64(len(b.Depth.Asks)), 500))]
+	b.Depth.Bids = b.Depth.Bids[:int(math.Min(float64(len(b.Depth.Bids)), 500))]
 
 	// //打印b.Depth.Bids 和 b.Depth.Aids 长度
 	// fmt.Println("合并后asks长度:", len(b.Depth.Asks))
