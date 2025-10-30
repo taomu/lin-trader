@@ -36,7 +36,7 @@ func ToOkxOrder(order *Order, toOkxSymbol func(string) (string, error), symbolIn
 	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_IOC {
 		ordType = "ioc"
 	}
-	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_GTC {
+	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_GTC || order.TimeInForce == "" {
 		ordType = strings.ToLower(ordType)
 	}
 
@@ -58,6 +58,10 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 	}
 	price := fmt.Sprintf("%.*f", symbolInfo.PricePrec, order.Price)
 	sz := fmt.Sprintf("%.*f", symbolInfo.QtyPrec, order.Quantity)
+	timeInForce := order.TimeInForce
+	if timeInForce == "" {
+		timeInForce = lintypes.ORDER_TIME_IN_FORCE_GTC
+	}
 	return map[string]interface{}{
 		"clientOrderId": order.ClientId,
 		"symbol":        binanceSymbol,
