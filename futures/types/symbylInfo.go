@@ -35,6 +35,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 				FilterType  string `json:"filterType"`
 				MinQty      string `json:"minQty,omitempty"`
 				MinNotional string `json:"minNotional,omitempty"`
+				TickSize    string `json:"tickSize,omitempty"`
+				StepSize    string `json:"stepSize,omitempty"`
 			} `json:"filters"`
 			Status         string `json:"status"`
 			UnderlyingType string `json:"underlyingType"`
@@ -45,13 +47,20 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 	}
 
 	var symbolInfos []SymbolInfo
+	var pricePrec int
+	var qtyPrec int
 	for _, symbol := range apiResponse.Symbols {
 		// 从filters中提取minQty
 		var minQty string
 		for _, filter := range symbol.Filters {
 			if filter.FilterType == "LOT_SIZE" {
 				minQty = filter.MinQty
-				break
+				qtyPrec = strings.Count(filter.StepSize, "0") - 1
+			}
+			if filter.FilterType == "PRICE_FILTER" {
+				//"tickSize": "0.0001"
+				tickSize := filter.TickSize
+				pricePrec = strings.Count(tickSize, "0") - 1
 			}
 		}
 		minQtyFloat, err := strconv.ParseFloat(minQty, 64)
@@ -77,8 +86,8 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: symbol.Symbol,
 			Symbol:    symbol.Symbol,
-			PricePrec: symbol.PricePrecision,
-			QtyPrec:   symbol.QuantityPrecision,
+			PricePrec: pricePrec,
+			QtyPrec:   qtyPrec,
 			MinQty:    minQtyFloat,
 			// 币安没有这些字段，设为空或默认值
 			CtVal:     0,
