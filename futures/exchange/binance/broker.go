@@ -38,6 +38,10 @@ func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 	}
 }
 
+func (b *Broker) Init() {
+	b.initSymbolInfos()
+}
+
 func (b *Broker) GetDatas() *types.BrokerDatas {
 	return b.Datas
 }
@@ -79,6 +83,16 @@ func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
 		return nil, err
 	}
 	return types.TransferBinanceSymbolInfo(resp)
+}
+func (b *Broker) initSymbolInfos() {
+	symbolInfos, err := b.GetSymbolInfos()
+	if err != nil {
+		fmt.Println("binance init symbol infos err:", err)
+		return
+	}
+	for _, symbolInfo := range symbolInfos {
+		b.Datas.SymbolInfos[symbolInfo.Symbol] = symbolInfo
+	}
 }
 func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	return nil, nil
@@ -445,7 +459,10 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 
 // 提交订单
 func (b *Broker) PlaceOrder(order *types.Order) error {
-	symbolInfo := b.Datas.SymbolInfos[order.Symbol]
+	symbolInfo, ok := b.Datas.SymbolInfos[order.Symbol]
+	if !ok {
+		return fmt.Errorf("symbol info not found from symbolInfo")
+	}
 	params, err := types.ToBinanceOrderParams(order, b.ToBinanceSymbol, symbolInfo)
 	if err != nil {
 		return err
