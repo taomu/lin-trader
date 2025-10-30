@@ -2,17 +2,21 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 // 公共订单信息，可以用于各个交易所下单
 type Order struct {
-	ClientId  string  `json:"clientId"`
-	Symbol    string  `json:"symbol"`
-	Side      string  `json:"side"`
-	PosSide   string  `json:"posSide"`
-	OrderType string  `json:"orderType"`
-	Price     float64 `json:"price"`
-	Quantity  float64 `json:"quantity"`
+	ClientId    string  `json:"clientId"`
+	Symbol      string  `json:"symbol"`
+	Side        string  `json:"side"`
+	PosSide     string  `json:"posSide"`
+	OrderType   string  `json:"orderType"`
+	Price       float64 `json:"price"`
+	Quantity    float64 `json:"quantity"`
+	TimeInForce string  `json:"timeInForce"`
 }
 
 func ToOkxOrder(order *Order, toOkxSymbol func(string) (string, error), symbolInfo SymbolInfo) (map[string]interface{}, error) {
@@ -22,12 +26,26 @@ func ToOkxOrder(order *Order, toOkxSymbol func(string) (string, error), symbolIn
 	}
 	price := fmt.Sprintf("%.*f", symbolInfo.PricePrec, order.Price)
 	sz := fmt.Sprintf("%.*f", symbolInfo.QtyPrec, order.Quantity/symbolInfo.CtVal)
+	ordType := order.OrderType
+	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_GTX {
+		ordType = "post_only"
+	}
+	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_FOK {
+		ordType = "fok"
+	}
+	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_IOC {
+		ordType = "ioc"
+	}
+	if order.TimeInForce == lintypes.ORDER_TIME_IN_FORCE_GTC {
+		ordType = strings.ToLower(ordType)
+	}
+
 	return map[string]interface{}{
 		"clOrdId": order.ClientId,
 		"InstId":  okxSymbol,
-		"side":    order.Side,
-		"posSide": order.PosSide,
-		"ordType": order.OrderType,
+		"side":    strings.ToLower(order.Side),
+		"posSide": strings.ToLower(order.PosSide),
+		"ordType": ordType,
 		"px":      price,
 		"sz":      sz,
 	}, nil
@@ -48,5 +66,6 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 		"type":          order.OrderType,
 		"price":         price,
 		"quantity":      sz,
+		"timeInForce":   order.TimeInForce,
 	}, nil
 }
