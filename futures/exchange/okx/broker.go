@@ -38,6 +38,9 @@ func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 		wsHost:  "wss://ws.okx.com",
 	}
 }
+func (b *Broker) Init() {
+
+}
 
 func (b *Broker) GetDatas() *types.BrokerDatas {
 	return b.Datas

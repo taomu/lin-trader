@@ -21,6 +21,7 @@ type BrokerPublic interface {
 	UnSubDepth(symbol string)
 	SetWsHost(host string)
 	SetRestHost(host string)
+	Init()
 }
 
 // 交易所私有方法
