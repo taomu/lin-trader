@@ -357,6 +357,48 @@ func (b *Broker) SubAccount() {
 	}()
 }
 
+func (b *Broker) GetSymbolInfo(symbol string) (*types.SymbolInfo, error) {
+	if len(b.Datas.SymbolInfos) == 0 {
+		symbolInfos, err := b.GetSymbolInfos()
+		if err != nil {
+			return nil, err
+		}
+		for _, info := range symbolInfos {
+			b.Datas.SymbolInfos[info.Symbol] = info
+		}
+	}
+	if info, ok := b.Datas.SymbolInfos[symbol]; ok {
+		return &info, nil
+	}
+	return nil, fmt.Errorf("symbol %s not found", symbol)
+}
+
+// 提交订单
 func (b *Broker) PlaceOrder(order *types.Order) error {
-	return nil
+	symbolInfo, err := b.GetSymbolInfo(order.Symbol)
+	if err != nil {
+		return err
+	}
+	params, err := types.ToBinanceOrderParams(order, b.ToBinanceSymbol, *symbolInfo)
+	if err != nil {
+		return err
+	}
+	resp, err := b.Api.PlaceOrder(params, b.ApiInfo)
+	if err != nil {
+		return err
+	}
+	var orderRes struct {
+		OrderId int64 `json:"orderId"`
+	}
+	if err := json.Unmarshal([]byte(resp), &orderRes); err != nil {
+		return err
+	}
+	if orderRes.OrderId != 0 {
+		return nil
+	}
+	return fmt.Errorf("order id is 0")
+}
+
+func (b *Broker) ToBinanceSymbol(symbol string) (string, error) {
+	return strings.ToUpper(symbol), nil
 }

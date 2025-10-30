@@ -32,3 +32,21 @@ func ToOkxOrder(order *Order, toOkxSymbol func(string) (string, error), symbolIn
 		"sz":      sz,
 	}, nil
 }
+
+func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, error), symbolInfo SymbolInfo) (map[string]interface{}, error) {
+	binanceSymbol, err := toBinanceSymbol(order.Symbol)
+	if err != nil {
+		return nil, err
+	}
+	price := fmt.Sprintf("%.*f", symbolInfo.PricePrec, order.Price)
+	sz := fmt.Sprintf("%.*f", symbolInfo.QtyPrec, order.Quantity)
+	return map[string]interface{}{
+		"clientOrderId": order.ClientId,
+		"symbol":        binanceSymbol,
+		"side":          order.Side,
+		"positionSide":  order.PosSide,
+		"type":          order.OrderType,
+		"price":         price,
+		"quantity":      sz,
+	}, nil
+}
