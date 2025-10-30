@@ -56,11 +56,17 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 			if filter.FilterType == "LOT_SIZE" {
 				minQty = filter.MinQty
 				qtyPrec = strings.Count(filter.StepSize, "0") - 1
+				if qtyPrec < 0 {
+					qtyPrec = 0
+				}
 			}
 			if filter.FilterType == "PRICE_FILTER" {
 				//"tickSize": "0.0001"
 				tickSize := filter.TickSize
 				pricePrec = strings.Count(tickSize, "0") - 1
+				if pricePrec < 0 {
+					pricePrec = 0
+				}
 			}
 		}
 		minQtyFloat, err := strconv.ParseFloat(minQty, 64)
