@@ -365,7 +365,71 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 		onData(wsData)
 		return
 	}
-
+	if header.EventType == "ORDER_TRADE_UPDATE" {
+		// 解析 ORDER_TRADE_UPDATE
+		var tradeUpdate struct {
+			EventType string `json:"e"`
+			EventTime int64  `json:"E"`
+			Trade     struct {
+				ClientOrderId  string `json:"c"`
+				Symbol         string `json:"s"`
+				Side           string `json:"S"`
+				PosSide        string `json:"ps"`
+				OrderId        string `json:"o"`
+				TradeId        int64  `json:"t"`  // 成交ID
+				Price          string `json:"p"`  // 订单原始价格
+				AvgPrice       string `json:"ap"` // 平均成交价
+				Qty            string `json:"q"`  // 订单原始数量
+				TradeTime      int64  `json:"T"`  // 成交时间
+				OrderEvent     string `json:"x"`  // 订单事件
+				Status         string `json:"X"`  // 订单状态
+				LastTradePrice string `json:"L"`  // 末次成交价格
+				LastTradeQty   string `json:"l"`  // 末次成交数量
+				Profit         string `json:"rp"` // 本次成交实现盈亏
+				FeeAsset       string `json:"N"`  // 手续费资产
+				Fee            string `json:"n"`  // 手续费金额
+			} `json:"t"`
+		}
+		// 解析成交信息
+		price, _ := strconv.ParseFloat(tradeUpdate.Trade.Price, 64)
+		qty, _ := strconv.ParseFloat(tradeUpdate.Trade.Qty, 64)
+		avgPrice, _ := strconv.ParseFloat(tradeUpdate.Trade.AvgPrice, 64)
+		profit, _ := strconv.ParseFloat(tradeUpdate.Trade.Profit, 64)
+		fee, _ := strconv.ParseFloat(tradeUpdate.Trade.Fee, 64)
+		if tradeUpdate.Trade.OrderEvent == lintypes.ORDER_EVENT_CALCULATED || tradeUpdate.Trade.OrderEvent == lintypes.ORDER_EVENT_TRADE {
+			wsData.DataType = types.WsDataTypeTrade
+			wsData.Trade = types.WsTrade{
+				ClientId:   tradeUpdate.Trade.ClientOrderId,
+				OrderId:    tradeUpdate.Trade.OrderId,
+				Symbol:     tradeUpdate.Trade.Symbol,
+				Side:       tradeUpdate.Trade.Side,
+				PosSide:    tradeUpdate.Trade.PosSide,
+				Price:      price,
+				Quantity:   qty,
+				OrderEvent: tradeUpdate.Trade.OrderEvent,
+				Status:     tradeUpdate.Trade.Status,
+				TradeId:    tradeUpdate.Trade.TradeId,
+				Profit:     profit,
+				FeeAsset:   tradeUpdate.Trade.FeeAsset,
+				Fee:        fee,
+			}
+			onData(wsData)
+		}
+		wsData.DataType = types.WsDataTypeOrder
+		wsData.Order = types.WsOrder{
+			ClientId:   tradeUpdate.Trade.ClientOrderId,
+			OrderId:    tradeUpdate.Trade.OrderId,
+			Symbol:     tradeUpdate.Trade.Symbol,
+			Side:       tradeUpdate.Trade.Side,
+			PosSide:    tradeUpdate.Trade.PosSide,
+			Price:      price,
+			Quantity:   qty,
+			OrderEvent: tradeUpdate.Trade.OrderEvent,
+			Status:     tradeUpdate.Trade.Status,
+			AvgPrice:   avgPrice,
+		}
+		onData(wsData)
+	}
 }
 
 // 提交订单
