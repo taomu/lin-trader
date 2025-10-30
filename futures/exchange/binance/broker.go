@@ -294,6 +294,7 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 	// 检测事件类型
 	var header struct {
 		EventType string `json:"e"`
+		EventTime int64  `json:"E"`
 	}
 	if err := json.Unmarshal([]byte(msg), &header); err != nil {
 		fmt.Println("account 解析出错消息", err, msg)
