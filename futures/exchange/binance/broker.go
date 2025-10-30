@@ -296,7 +296,7 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 		EventType string `json:"e"`
 	}
 	if err := json.Unmarshal([]byte(msg), &header); err != nil {
-		fmt.Println("account 未知消息", msg)
+		fmt.Println("account 解析出错消息", err, msg)
 		return
 	}
 	wsData := types.WsData{
@@ -429,7 +429,9 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			AvgPrice:   avgPrice,
 		}
 		onData(wsData)
+		return
 	}
+	fmt.Println("account 未处理消息", msg)
 }
 
 // 提交订单
