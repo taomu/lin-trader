@@ -251,7 +251,7 @@ func (b *Broker) GetPositions() ([]*types.Position, error) {
 }
 
 // 订阅账户信息推送，维护 Vars 中的仓位与资金
-func (b *Broker) SubAccount() {
+func (b *Broker) SubAccount(dataHandle func(wsData types.WsData)) {
 	// 1) 获取 listenKey
 	lkResp, err := b.Api.StartUserDataStream(b.ApiInfo.Key)
 	if err != nil {
@@ -265,7 +265,6 @@ func (b *Broker) SubAccount() {
 		fmt.Println("parse listenKey err:", err, "resp:", lkResp)
 		return
 	}
-
 	// 2) 建立账户 WebSocket
 	wsURL := "wss://fstream.binance.com/ws/" + lk.ListenKey
 	b.wsAccount = util.NewExcWebsocket(wsURL)
@@ -273,17 +272,37 @@ func (b *Broker) SubAccount() {
 		fmt.Println("binance account connect")
 	}
 	b.wsAccount.OnMessage = func(msg string) {
-		// 检测事件类型
-		var header struct {
-			EventType string `json:"e"`
+		b.onWsDataAccount(msg, dataHandle)
+	}
+	if err := b.wsAccount.Connect(); err != nil {
+		fmt.Println("binance account ws connect err:", err)
+		return
+	}
+	// 3) 保活 listenKey（每 30 分钟）
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := b.Api.KeepaliveUserDataStream(b.ApiInfo.Key, lk.ListenKey); err != nil {
+				fmt.Println("keepalive listenKey err:", err)
+			}
 		}
-		if err := json.Unmarshal([]byte(msg), &header); err != nil {
-			return
-		}
-		if header.EventType != "ACCOUNT_UPDATE" {
-			return
-		}
+	}()
+}
 
+func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
+	// 检测事件类型
+	var header struct {
+		EventType string `json:"e"`
+	}
+	if err := json.Unmarshal([]byte(msg), &header); err != nil {
+		fmt.Println("account 未知消息", msg)
+		return
+	}
+	wsData := types.WsData{
+		DataType: types.WsDataTypeUnknow,
+	}
+	if header.EventType == "ACCOUNT_UPDATE" {
 		// 解析 ACCOUNT_UPDATE
 		var accUpdate struct {
 			EventType string `json:"e"`
@@ -303,25 +322,28 @@ func (b *Broker) SubAccount() {
 				} `json:"P"`
 			} `json:"a"`
 		}
-		if err := json.Unmarshal([]byte(msg), &accUpdate); err != nil {
-			fmt.Println("account update unmarshal err:", err)
-			return
+		// 更新资金
+		wsData.DataType = types.WsDataTypeBalance
+		wsData.Balance = types.WsBalance{
+			BalanceAll:   0,
+			BalanceAvail: 0,
 		}
-
-		// 更新资金（USDT）
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {
 				if v, err := strconv.ParseFloat(binfo.Wb, 64); err == nil {
-					b.Datas.BalanceAll = v
+					wsData.Balance.BalanceAll = v
 				}
 				if v, err := strconv.ParseFloat(binfo.Cw, 64); err == nil {
-					b.Datas.BalanceAvail = v
+					wsData.Balance.BalanceAvail = v
 				}
 				break
 			}
 		}
-
-		// 更新仓位
+		b.Datas.BalanceAll = wsData.Balance.BalanceAll
+		b.Datas.BalanceAvail = wsData.Balance.BalanceAvail
+		onData(wsData)
+		// 仓位更新
+		wsData.DataType = types.WsDataTypePosition
 		positions := make([]*types.Position, 0, len(accUpdate.Acc.Positions))
 		for _, p := range accUpdate.Acc.Positions {
 			pa, _ := strconv.ParseFloat(p.Pa, 64)
@@ -339,47 +361,17 @@ func (b *Broker) SubAccount() {
 			})
 		}
 		b.Datas.Positions = positions
-	}
-	if err := b.wsAccount.Connect(); err != nil {
-		fmt.Println("binance account ws connect err:", err)
+		wsData.Position = positions
+		onData(wsData)
 		return
 	}
 
-	// 3) 保活 listenKey（每 30 分钟）
-	go func() {
-		ticker := time.NewTicker(30 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-			if err := b.Api.KeepaliveUserDataStream(b.ApiInfo.Key, lk.ListenKey); err != nil {
-				fmt.Println("keepalive listenKey err:", err)
-			}
-		}
-	}()
-}
-
-func (b *Broker) GetSymbolInfo(symbol string) (*types.SymbolInfo, error) {
-	if len(b.Datas.SymbolInfos) == 0 {
-		symbolInfos, err := b.GetSymbolInfos()
-		if err != nil {
-			return nil, err
-		}
-		for _, info := range symbolInfos {
-			b.Datas.SymbolInfos[info.Symbol] = info
-		}
-	}
-	if info, ok := b.Datas.SymbolInfos[symbol]; ok {
-		return &info, nil
-	}
-	return nil, fmt.Errorf("symbol %s not found", symbol)
 }
 
 // 提交订单
 func (b *Broker) PlaceOrder(order *types.Order) error {
-	symbolInfo, err := b.GetSymbolInfo(order.Symbol)
-	if err != nil {
-		return err
-	}
-	params, err := types.ToBinanceOrderParams(order, b.ToBinanceSymbol, *symbolInfo)
+	symbolInfo := b.Datas.SymbolInfos[order.Symbol]
+	params, err := types.ToBinanceOrderParams(order, b.ToBinanceSymbol, symbolInfo)
 	if err != nil {
 		return err
 	}

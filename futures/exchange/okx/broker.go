@@ -127,7 +127,7 @@ func (b *Broker) GetPositions() ([]*types.Position, error) {
 }
 
 // 订阅账户信息推送，维护 Vars 中的仓位与资金
-func (b *Broker) SubAccount() {
+func (b *Broker) SubAccount(onData func(updateData types.WsData)) {
 	// 私有WS地址
 	wsURL := "wss://ws.okx.com:8443/ws/v5/private"
 	b.wsAccount = util.NewExcWebsocket(wsURL)

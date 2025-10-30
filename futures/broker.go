@@ -26,7 +26,7 @@ type BrokerPublic interface {
 // 交易所私有方法
 type BrokerPrivate interface {
 	GetPositions() ([]*types.Position, error)
-	SubAccount()
+	SubAccount(onData func(updateData types.WsData))
 	PlaceOrder(order *types.Order) error // 下单
 }
 
