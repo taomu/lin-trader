@@ -467,8 +467,6 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("symbolInfo:", symbolInfo)
-	fmt.Println("binance place order params:", params)
 	resp, err := b.Api.PlaceOrder(params, b.ApiInfo)
 	if err != nil {
 		return err
