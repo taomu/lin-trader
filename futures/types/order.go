@@ -63,13 +63,13 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 		timeInForce = lintypes.ORDER_TIME_IN_FORCE_GTC
 	}
 	return map[string]interface{}{
-		"clientOrderId": order.ClientId,
-		"symbol":        binanceSymbol,
-		"side":          order.Side,
-		"positionSide":  order.PosSide,
-		"type":          order.OrderType,
-		"price":         price,
-		"quantity":      sz,
-		"timeInForce":   timeInForce,
+		"newClientOrderId": order.ClientId,
+		"symbol":           binanceSymbol,
+		"side":             order.Side,
+		"positionSide":     order.PosSide,
+		"type":             order.OrderType,
+		"price":            price,
+		"quantity":         sz,
+		"timeInForce":      timeInForce,
 	}, nil
 }
