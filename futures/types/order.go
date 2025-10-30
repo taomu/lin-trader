@@ -70,6 +70,6 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 		"type":          order.OrderType,
 		"price":         price,
 		"quantity":      sz,
-		"timeInForce":   order.TimeInForce,
+		"timeInForce":   timeInForce,
 	}, nil
 }
