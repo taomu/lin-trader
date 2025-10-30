@@ -47,22 +47,24 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 	}
 
 	var symbolInfos []SymbolInfo
-	var pricePrec int
-	var qtyPrec int
 	for _, symbol := range apiResponse.Symbols {
+		var pricePrec int
+		var qtyPrec int
 		// 从filters中提取minQty
 		var minQty string
 		for _, filter := range symbol.Filters {
 			if filter.FilterType == "LOT_SIZE" {
 				minQty = filter.MinQty
-				qtyPrec = strings.Count(filter.StepSize, "0") - 1
+				stepSize := filter.StepSize
+				stepSize = strings.TrimRight(stepSize, "0")
+				qtyPrec = strings.Count(stepSize, "0") - 1
 				if qtyPrec < 0 {
 					qtyPrec = 0
 				}
 			}
 			if filter.FilterType == "PRICE_FILTER" {
-				//"tickSize": "0.0001"
 				tickSize := filter.TickSize
+				tickSize = strings.TrimRight(tickSize, "0")
 				pricePrec = strings.Count(tickSize, "0") - 1
 				if pricePrec < 0 {
 					pricePrec = 0
