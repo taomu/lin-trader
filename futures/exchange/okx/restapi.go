@@ -143,3 +143,10 @@ func (ra *RestApi) PlaceOrder(params map[string]interface{}, apiInfo *lintypes.A
 	method := "POST"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+// 取消订单
+func (ra *RestApi) CancelOrder(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
+	url := "/api/v5/trade/cancel-order"
+	method := "POST"
+	return ra.sendRequest(url, method, params, apiInfo)
+}

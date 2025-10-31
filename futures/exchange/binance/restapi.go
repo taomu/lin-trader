@@ -253,3 +253,9 @@ func (ra *RestApi) KeepaliveUserDataStream(apiKey, listenKey string) error {
 	}
 	return nil
 }
+
+func (ra *RestApi) CancelOrder(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
+	url := "/fapi/v1/order"
+	method := "DELETE"
+	return ra.sendRequest(url, method, params, apiInfo)
+}

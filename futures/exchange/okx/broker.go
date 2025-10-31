@@ -326,3 +326,26 @@ func (b *Broker) toCommonSymbol(symbol string) (string, error) {
 	}
 	return parts[0] + parts[1], nil
 }
+
+func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
+	okxSymbol, err := b.toOkxSymbol(symbol)
+	if err != nil {
+		return err
+	}
+	params := map[string]interface{}{
+		"instId":  okxSymbol,
+		"clOrdId": clientOrderId,
+	}
+	resp, err := b.Api.CancelOrder(params, b.ApiInfo)
+	if err != nil {
+		return err
+	}
+	orderResp, err := okdata.ParseOrderResp(resp)
+	if err != nil {
+		return err
+	}
+	if orderResp.Code != "0" {
+		return fmt.Errorf("okx cancel order error: %s", orderResp.Msg)
+	}
+	return nil
+}

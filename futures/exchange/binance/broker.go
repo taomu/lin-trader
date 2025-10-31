@@ -486,3 +486,28 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 func (b *Broker) ToBinanceSymbol(symbol string) (string, error) {
 	return strings.ToUpper(symbol), nil
 }
+
+func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
+	binanceSymbol, err := b.ToBinanceSymbol(symbol)
+	if err != nil {
+		return err
+	}
+	params := map[string]interface{}{
+		"symbol":            binanceSymbol,
+		"origClientOrderId": clientOrderId,
+	}
+	resp, err := b.Api.CancelOrder(params, b.ApiInfo)
+	if err != nil {
+		return err
+	}
+	var orderRes struct {
+		OrderId int64 `json:"orderId"`
+	}
+	if err := json.Unmarshal([]byte(resp), &orderRes); err != nil {
+		return err
+	}
+	if orderRes.OrderId != 0 {
+		return nil
+	}
+	return fmt.Errorf("order id is 0")
+}

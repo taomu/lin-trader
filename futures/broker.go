@@ -22,6 +22,7 @@ type BrokerPublic interface {
 	SetWsHost(host string)
 	SetRestHost(host string)
 	Init()
+	CancelOrder(clientOrderId string, symbol string) error // 取消订单
 }
 
 // 交易所私有方法
