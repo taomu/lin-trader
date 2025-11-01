@@ -323,6 +323,7 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			EventType string `json:"e"`
 			EventTime int64  `json:"E"`
 			Acc       struct {
+				MEvent string `json:"m"`
 				Balances []struct {
 					Asset string `json:"a"`
 					Wb    string `json:"wb"` // 钱包余额
@@ -346,6 +347,7 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 		wsData.Balance = types.WsBalance{
 			BalanceAll:   0,
 			BalanceAvail: 0,
+			MEvent:       accUpdate.Acc.MEvent,
 		}
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {

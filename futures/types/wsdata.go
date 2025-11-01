@@ -28,6 +28,7 @@ type WsTrade struct {
 type WsBalance struct {
 	BalanceAll   float64 `json:"balanceAll"`
 	BalanceAvail float64 `json:"balanceAvailable"`
+	MEvent       string  `json:"MEvent"`
 }
 
 type WsOrder struct {
