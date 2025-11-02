@@ -349,3 +349,13 @@ func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
 	}
 	return nil
 }
+
+// 清除所有连接定时器等
+func (b *Broker) ClearAll() {
+	if b.wsAccount != nil {
+		b.wsAccount.Close()
+	}
+	// if b.wsDepth != nil {
+	// 	b.wsDepth.Close()
+	// }
+}

@@ -16,13 +16,14 @@ import (
 )
 
 type Broker struct {
-	Datas     *types.BrokerDatas
-	Api       *RestApi
-	ApiInfo   *lintypes.ApiInfo
-	wsAccount *util.ExcWebsocket
-	wsUrl     string
-	wsDepth   *util.ExcWebsocket
-	Depth     *types.Depth
+	Datas           *types.BrokerDatas
+	Api             *RestApi
+	ApiInfo         *lintypes.ApiInfo
+	wsAccount       *util.ExcWebsocket
+	wsUrl           string
+	wsDepth         *util.ExcWebsocket
+	Depth           *types.Depth
+	listenKeyTicker *time.Ticker
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
@@ -294,9 +295,9 @@ func (b *Broker) SubAccount(dataHandle func(wsData types.WsData)) {
 	}
 	// 3) 保活 listenKey（每 30 分钟）
 	go func() {
-		ticker := time.NewTicker(30 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
+		b.listenKeyTicker = time.NewTicker(30 * time.Minute)
+		defer b.listenKeyTicker.Stop()
+		for range b.listenKeyTicker.C {
 			if err := b.Api.KeepaliveUserDataStream(b.ApiInfo.Key, lk.ListenKey); err != nil {
 				fmt.Println("keepalive listenKey err:", err)
 			}
@@ -323,7 +324,7 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			EventType string `json:"e"`
 			EventTime int64  `json:"E"`
 			Acc       struct {
-				MEvent string `json:"m"`
+				MEvent   string `json:"m"`
 				Balances []struct {
 					Asset string `json:"a"`
 					Wb    string `json:"wb"` // 钱包余额
@@ -512,4 +513,17 @@ func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
 		return nil
 	}
 	return fmt.Errorf("order id is 0")
+}
+
+// 清除所有连接定时器等
+func (b *Broker) ClearAll() {
+	if b.wsAccount != nil {
+		b.wsAccount.Close()
+	}
+	if b.wsDepth != nil {
+		b.wsDepth.Close()
+	}
+	if b.listenKeyTicker != nil {
+		b.listenKeyTicker.Stop()
+	}
 }

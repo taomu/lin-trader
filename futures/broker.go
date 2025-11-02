@@ -23,6 +23,7 @@ type BrokerPublic interface {
 	SetRestHost(host string)
 	Init()
 	CancelOrder(clientOrderId string, symbol string) error // 取消订单
+	ClearAll()                                             //清除所有连接定时器等
 }
 
 // 交易所私有方法
