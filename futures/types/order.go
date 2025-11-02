@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/taomu/lin-trader/pkg/lintypes"
@@ -58,6 +59,14 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 	}
 	price := fmt.Sprintf("%.*f", symbolInfo.PricePrec, order.Price)
 	sz := fmt.Sprintf("%.*f", symbolInfo.QtyPrec, order.Quantity)
+	//判断sz转float64是否为0
+	szFloat, err := strconv.ParseFloat(sz, 64)
+	if err != nil {
+		return nil, err
+	}
+	if szFloat == 0 {
+		return nil, fmt.Errorf("quantity is 0")
+	}
 	timeInForce := order.TimeInForce
 	if timeInForce == "" {
 		timeInForce = lintypes.ORDER_TIME_IN_FORCE_GTC
