@@ -73,8 +73,9 @@ func ToBinanceOrderParams(order *Order, toBinanceSymbol func(string) (string, er
 		"timeInForce":      timeInForce,
 	}
 	if order.OrderType == lintypes.ORDER_TYPE_MARKET {
-		//删除timeInForce参数
+		//删除timeInForce和price参数
 		delete(params, "timeInForce")
+		delete(params, "price")
 	}
 	return params, nil
 }
