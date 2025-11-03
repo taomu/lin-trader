@@ -380,13 +380,20 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			})
 		}
 		//positions与b.Datas.Positions对比，如果在b.Datas.Positions有PosSide和Symbol相同的，就更新b.Datas.Positions的PosAmt、EntryPrice、UnrealizedProfit
+		//如果在b.Datas.Positions没有，就添加到b.Datas.Positions
 		for _, p := range positions {
+			found := false
 			for _, dp := range b.Datas.Positions {
 				if dp.PosSide == p.PosSide && dp.Symbol == p.Symbol {
 					dp.PosAmt = p.PosAmt
 					dp.EntryPrice = p.EntryPrice
 					dp.UnrealizedProfit = p.UnrealizedProfit
+					found = true
+					break
 				}
+			}
+			if !found {
+				b.Datas.Positions = append(b.Datas.Positions, p)
 			}
 		}
 		//如果b.Datas.Positions pa==0 就删除
