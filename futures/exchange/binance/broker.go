@@ -369,9 +369,6 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 		positions := make([]*types.Position, 0, len(accUpdate.Acc.Positions))
 		for _, p := range accUpdate.Acc.Positions {
 			pa, _ := strconv.ParseFloat(p.Pa, 64)
-			if pa == 0 {
-				continue
-			}
 			ep, _ := strconv.ParseFloat(p.Ep, 64)
 			up, _ := strconv.ParseFloat(p.Up, 64)
 			positions = append(positions, &types.Position{
@@ -382,8 +379,23 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				UnrealizedProfit: up,
 			})
 		}
-		b.Datas.Positions = positions
-		wsData.Position = positions
+		//positions与b.Datas.Positions对比，如果在b.Datas.Positions有PosSide和Symbol相同的，就更新b.Datas.Positions的PosAmt、EntryPrice、UnrealizedProfit
+		for _, p := range positions {
+			for _, dp := range b.Datas.Positions {
+				if dp.PosSide == p.PosSide && dp.Symbol == p.Symbol {
+					dp.PosAmt = p.PosAmt
+					dp.EntryPrice = p.EntryPrice
+					dp.UnrealizedProfit = p.UnrealizedProfit
+				}
+			}
+		}
+		//如果b.Datas.Positions pa==0 就删除
+		for i := len(b.Datas.Positions) - 1; i >= 0; i-- {
+			if b.Datas.Positions[i].PosAmt == 0 {
+				b.Datas.Positions = append(b.Datas.Positions[:i], b.Datas.Positions[i+1:]...)
+			}
+		}
+		wsData.Position = b.Datas.Positions
 		onData(wsData)
 		return
 	}
@@ -439,6 +451,19 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				FeeAsset:   tradeUpdate.Order.FeeAsset,
 				Fee:        fee,
 			}
+			onData(wsData)
+			//更新b.Datas.Positions 的 PosAmt
+			for _, dp := range b.Datas.Positions {
+				if dp.PosSide == tradeUpdate.Order.PosSide && dp.Symbol == tradeUpdate.Order.Symbol {
+					if tradeUpdate.Order.Side == lintypes.SIDE_BUY {
+						dp.PosAmt += qty
+					} else {
+						dp.PosAmt -= qty
+					}
+				}
+			}
+			wsData.DataType = types.WsDataTypePosition
+			wsData.Position = b.Datas.Positions
 			onData(wsData)
 		}
 		wsData.DataType = types.WsDataTypeOrder
