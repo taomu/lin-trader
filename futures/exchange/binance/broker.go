@@ -459,19 +459,19 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				Fee:        fee,
 			}
 			onData(wsData)
-			//更新b.Datas.Positions 的 PosAmt
-			for _, dp := range b.Datas.Positions {
-				if dp.PosSide == tradeUpdate.Order.PosSide && dp.Symbol == tradeUpdate.Order.Symbol {
-					if tradeUpdate.Order.Side == lintypes.SIDE_BUY {
-						dp.PosAmt += qty
-					} else {
-						dp.PosAmt -= qty
-					}
-				}
-			}
-			wsData.DataType = types.WsDataTypePosition
-			wsData.Position = b.Datas.Positions
-			onData(wsData)
+			// //更新b.Datas.Positions 的 PosAmt
+			// for _, dp := range b.Datas.Positions {
+			// 	if dp.PosSide == tradeUpdate.Order.PosSide && dp.Symbol == tradeUpdate.Order.Symbol {
+			// 		if tradeUpdate.Order.Side == lintypes.SIDE_BUY {
+			// 			dp.PosAmt += qty
+			// 		} else {
+			// 			dp.PosAmt -= qty
+			// 		}
+			// 	}
+			// }
+			// wsData.DataType = types.WsDataTypePosition
+			// wsData.Position = b.Datas.Positions
+			// onData(wsData)
 		}
 		wsData.DataType = types.WsDataTypeOrder
 		wsData.Order = types.WsOrder{
