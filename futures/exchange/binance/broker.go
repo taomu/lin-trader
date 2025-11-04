@@ -350,6 +350,9 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			BalanceAvail: 0,
 			MEvent:       accUpdate.Acc.MEvent,
 		}
+		if accUpdate.Acc.MEvent == "FUNDING_FEE" {
+			fmt.Println("FUNDING_FEE原消息: ", msg)
+		}
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {
 				if v, err := strconv.ParseFloat(binfo.Wb, 64); err == nil {
