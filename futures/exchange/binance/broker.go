@@ -287,7 +287,7 @@ func (b *Broker) SubAccount(dataHandle func(wsData types.WsData)) {
 		fmt.Println("binance account connect")
 	}
 	b.wsAccount.OnMessage = func(msg string) {
-		b.onWsDataAccount(msg, dataHandle)
+		go b.onWsDataAccount(msg, dataHandle)
 	}
 	if err := b.wsAccount.Connect(); err != nil {
 		fmt.Println("binance account ws connect err:", err)
@@ -343,15 +343,12 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 			fmt.Println("account 解析出错消息", err, msg)
 			return
 		}
-		// 更新资金
-		wsData.DataType = types.WsDataTypeBalance
+		wsData.DataTs = accUpdate.EventTime
+		// 更新资金信息
 		wsData.Balance = types.WsBalance{
 			BalanceAll:   0,
 			BalanceAvail: 0,
 			MEvent:       accUpdate.Acc.MEvent,
-		}
-		if accUpdate.Acc.MEvent == "FUNDING_FEE" {
-			fmt.Println("FUNDING_FEE原消息: ", msg)
 		}
 		for _, binfo := range accUpdate.Acc.Balances {
 			if binfo.Asset == "USDT" {
@@ -364,12 +361,9 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				break
 			}
 		}
-		b.Datas.BalanceAll = wsData.Balance.BalanceAll
-		b.Datas.BalanceAvail = wsData.Balance.BalanceAvail
-		onData(wsData)
-		// 仓位更新
-		wsData.DataType = types.WsDataTypePosition
+		// 更新仓位信息
 		positions := make([]*types.Position, 0, len(accUpdate.Acc.Positions))
+		eventSymbol := ""
 		for _, p := range accUpdate.Acc.Positions {
 			pa, _ := strconv.ParseFloat(p.Pa, 64)
 			ep, _ := strconv.ParseFloat(p.Ep, 64)
@@ -381,6 +375,9 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				EntryPrice:       ep,
 				UnrealizedProfit: up,
 			})
+			if accUpdate.Acc.MEvent == "FUNDING_FEE" && eventSymbol == "" {
+				eventSymbol = p.Symbol
+			}
 		}
 		//positions与b.Datas.Positions对比，如果在b.Datas.Positions有PosSide和Symbol相同的，就更新b.Datas.Positions的PosAmt、EntryPrice、UnrealizedProfit
 		//如果在b.Datas.Positions没有，就添加到b.Datas.Positions
@@ -405,6 +402,14 @@ func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 				b.Datas.Positions = append(b.Datas.Positions[:i], b.Datas.Positions[i+1:]...)
 			}
 		}
+		// 推送资金信息
+		wsData.DataType = types.WsDataTypeBalance
+		b.Datas.BalanceAll = wsData.Balance.BalanceAll
+		b.Datas.BalanceAvail = wsData.Balance.BalanceAvail
+		wsData.Balance.EventSymbol = eventSymbol
+		onData(wsData)
+		// 推送仓位信息
+		wsData.DataType = types.WsDataTypePosition
 		wsData.Position = b.Datas.Positions
 		onData(wsData)
 		return

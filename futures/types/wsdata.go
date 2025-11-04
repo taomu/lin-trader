@@ -29,6 +29,7 @@ type WsBalance struct {
 	BalanceAll   float64 `json:"balanceAll"`
 	BalanceAvail float64 `json:"balanceAvailable"`
 	MEvent       string  `json:"MEvent"`
+	EventSymbol  string  `json:"EventSymbol"` //当 MEvent==’FUNDING_FEE’时，为对应的交易对
 }
 
 type WsOrder struct {
@@ -46,6 +47,7 @@ type WsOrder struct {
 
 type WsData struct {
 	DataType string
+	DataTs   int64
 	Order    WsOrder
 	Trade    WsTrade
 	Position []*Position
