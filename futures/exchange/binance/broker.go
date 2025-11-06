@@ -97,9 +97,7 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 	}
 	retDatas := make(map[string][]types.LeverageBracket, 0)
 	for _, item := range resItems {
-		if item.Symbol == symbol {
-			retDatas[item.Symbol] = item.LeverageBrackets
-		}
+		retDatas[item.Symbol] = item.LeverageBrackets
 	}
 	return retDatas, nil
 }
