@@ -10,32 +10,39 @@ import (
 	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
-// 交易所公告方法
-type BrokerPublic interface {
-	GetDatas() *types.BrokerDatas
-	GetPremium(symbol string) ([]types.Premium, error)
-	GetFundingInfo() ([]bndata.FundingInfo, error)
-	GetSymbolInfos() ([]types.SymbolInfo, error)
-	GetTickers24h() ([]types.Ticker24H, error)
-	SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth))
-	UnSubDepth(symbol string)
-	SetWsHost(host string)
-	SetRestHost(host string)
-	Init()
-	CancelOrder(clientOrderId string, symbol string) error // 取消订单
-	ClearAll()                                             //清除所有连接定时器等
-}
-
-// 交易所私有方法
-type BrokerPrivate interface {
-	GetPositions() ([]*types.Position, error)
-	SubAccount(onData func(updateData types.WsData))
-	PlaceOrder(order *types.Order) error // 下单
-}
-
 type Broker interface {
-	BrokerPublic
-	BrokerPrivate
+	//获取broker的公共参数SymbolInfos、BalanceAll、BalanceAvail、Positions
+	GetDatas() *types.BrokerDatas
+	//获取溢价指数
+	GetPremium(symbol string) ([]types.Premium, error)
+	//获取资金费率
+	GetFundingInfo() ([]bndata.FundingInfo, error)
+	//获取所有交易对
+	GetSymbolInfos() ([]types.SymbolInfo, error)
+	//获取24小时内的交易对价格变化
+	GetTickers24h() ([]types.Ticker24H, error)
+	//订阅深度
+	SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth))
+	//取消订阅深度
+	UnSubDepth(symbol string)
+	//设置ws主机地址
+	SetWsHost(host string)
+	//设置rest主机地址
+	SetRestHost(host string)
+	//初始化broker
+	Init()
+	//取消订单
+	CancelOrder(clientOrderId string, symbol string) error // 取消订单
+	//清除所有连接定时器等
+	ClearAll()
+	//获取持仓
+	GetPositions() ([]*types.Position, error)
+	//订阅账户
+	SubAccount(onData func(updateData types.WsData))
+	//下单
+	PlaceOrder(order *types.Order) error
+	//获取杠杆层级 bn需要api, symbol=""时 获取全部
+	GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error)
 }
 
 func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {

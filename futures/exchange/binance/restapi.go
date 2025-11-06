@@ -259,3 +259,9 @@ func (ra *RestApi) CancelOrder(params map[string]interface{}, apiInfo *lintypes.
 	method := "DELETE"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+func (ra *RestApi) GetLeverageBrackets(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
+	url := "/fapi/v1/leverageBracket"
+	method := "GET"
+	return ra.sendRequest(url, method, params, apiInfo)
+}

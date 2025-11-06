@@ -26,6 +26,7 @@ type Broker struct {
 	listenKeyTicker *time.Ticker
 }
 
+// NewBroker 创建一个新的Binance Broker实例
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 	datas := &types.BrokerDatas{
 		SymbolInfos: make(map[string]types.SymbolInfo),
@@ -39,26 +40,31 @@ func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 	}
 }
 
+// Init 初始化Broker，包括获取交易对信息
 func (b *Broker) Init() {
 	b.initSymbolInfos()
 }
 
+// GetDatas 获取Broker的数据
 func (b *Broker) GetDatas() *types.BrokerDatas {
 	return b.Datas
 }
 
+// SetWsHost 设置WebSocket主机地址
 func (b *Broker) SetWsHost(host string) {
 	if host != "" {
 		b.wsUrl = host + "/ws"
 	}
 }
 
+// SetRestHost 设置REST API主机地址
 func (b *Broker) SetRestHost(host string) {
 	if host != "" {
 		b.Api.SetHost(host)
 	}
 }
 
+// GetPremium 获取交易对的溢价信息
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	params := map[string]interface{}{}
 	if symbol != "" {
@@ -70,6 +76,35 @@ func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	}
 	return types.TransferBinancePremium(resp)
 }
+
+// GetLeverageBracket 获取交易对的杠杆层级信息
+func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error) {
+	params := map[string]interface{}{}
+	if symbol != "" {
+		params["symbol"] = symbol
+	}
+	resp, err := b.Api.GetLeverageBrackets(params, b.ApiInfo)
+	if err != nil {
+		return nil, err
+	}
+	type ResItem struct {
+		Symbol           string                  `json:"symbol"`
+		LeverageBrackets []types.LeverageBracket `json:"brackets"`
+	}
+	var resItems []ResItem
+	if err := json.Unmarshal([]byte(resp), &resItems); err != nil {
+		return nil, err
+	}
+	retDatas := make(map[string][]types.LeverageBracket, 0)
+	for _, item := range resItems {
+		if item.Symbol == symbol {
+			retDatas[item.Symbol] = item.LeverageBrackets
+		}
+	}
+	return retDatas, nil
+}
+
+// GetFundingInfo 获取交易对的资金信息
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	params := map[string]interface{}{}
 	resp, err := b.Api.FundingInfo(params)
@@ -78,6 +113,8 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	}
 	return bndata.TransferBinanceFundingInfo(resp)
 }
+
+// GetSymbolInfos 获取所有交易对的信息
 func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
 	resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
 	if err != nil {
@@ -85,6 +122,8 @@ func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
 	}
 	return types.TransferBinanceSymbolInfo(resp)
 }
+
+// initSymbolInfos 初始化交易对信息
 func (b *Broker) initSymbolInfos() {
 	symbolInfos, err := b.GetSymbolInfos()
 	if err != nil {
@@ -95,9 +134,13 @@ func (b *Broker) initSymbolInfos() {
 		b.Datas.SymbolInfos[symbolInfo.Symbol] = symbolInfo
 	}
 }
+
+// GetTickers24h 获取所有交易对的24小时统计信息
 func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	return nil, nil
 }
+
+// SubDepth 订阅交易对的深度信息
 func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth)) {
 	if b.wsDepth == nil {
 		b.wsDepth = util.NewExcWebsocket(b.wsUrl)
@@ -135,6 +178,7 @@ func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, sn
 	go b.initDepth(symbol)
 }
 
+// UnSubDepth 取消订阅交易对的深度信息
 func (b *Broker) UnSubDepth(symbol string) {
 	if b.wsDepth == nil {
 		return
@@ -143,6 +187,7 @@ func (b *Broker) UnSubDepth(symbol string) {
 	b.wsDepth.Push(msg)
 }
 
+// depthMerge 合并深度更新数据
 func (b *Broker) depthMerge(depthUpdate types.Depth) {
 	if b.Depth == nil {
 		return
@@ -230,6 +275,7 @@ func (b *Broker) depthMerge(depthUpdate types.Depth) {
 	// fmt.Println("-----------------")
 }
 
+// initDepth 初始化交易对的深度信息
 func (b *Broker) initDepth(symbol string) {
 	params := map[string]interface{}{
 		"symbol": symbol,
@@ -249,6 +295,7 @@ func (b *Broker) initDepth(symbol string) {
 	fmt.Println("初始化获取到快照asks长度:", len(b.Depth.Asks), "bids长度:", len(b.Depth.Bids))
 }
 
+// GetPositions 获取所有持仓信息
 func (b *Broker) GetPositions() ([]*types.Position, error) {
 	params := map[string]interface{}{}
 	resp, err := b.Api.Account(params, b.ApiInfo)
@@ -265,7 +312,7 @@ func (b *Broker) GetPositions() ([]*types.Position, error) {
 	return bndata.TransferBinanceAccountResToPos(account), err
 }
 
-// 订阅账户信息推送，维护 Vars 中的仓位与资金
+// 订阅账户信息推送，维护 Datas 中的仓位与资金
 func (b *Broker) SubAccount(dataHandle func(wsData types.WsData)) {
 	// 1) 获取 listenKey
 	lkResp, err := b.Api.StartUserDataStream(b.ApiInfo.Key)
@@ -305,6 +352,7 @@ func (b *Broker) SubAccount(dataHandle func(wsData types.WsData)) {
 	}()
 }
 
+// onWsDataAccount 处理账户 WebSocket 数据
 func (b *Broker) onWsDataAccount(msg string, onData func(wsData types.WsData)) {
 	// 检测事件类型
 	var header struct {
@@ -526,10 +574,12 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 	return fmt.Errorf("order id is 0")
 }
 
+// ToBinanceSymbol 转为币安交易对
 func (b *Broker) ToBinanceSymbol(symbol string) (string, error) {
 	return strings.ToUpper(symbol), nil
 }
 
+// CancelOrder 取消订单
 func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
 	binanceSymbol, err := b.ToBinanceSymbol(symbol)
 	if err != nil {

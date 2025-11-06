@@ -359,3 +359,7 @@ func (b *Broker) ClearAll() {
 	// 	b.wsDepth.Close()
 	// }
 }
+
+func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error) {
+	return nil, nil
+}
