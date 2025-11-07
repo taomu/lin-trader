@@ -156,24 +156,24 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error parsing InstId %s CtVal: %w", item.InstId, err)
 		}
-		tickSzInt, err := strconv.Atoi(item.TickSz)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing InstId %s TickSz: %w", item.InstId, err)
-		}
+		// tickSzFloat, err := strconv.ParseFloat(item.TickSz, 64)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("error parsing InstId %s TickSz: %w", item.InstId, err)
+		// }
 		lotSzFloat, err := strconv.ParseFloat(item.LotSz, 64)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing InstId %s LotSz: %w", item.InstId, err)
 		}
 		minSzFloat, err := strconv.ParseFloat(item.MinSz, 64)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing MinSz: %w", err)
+			return nil, fmt.Errorf("error parsing InstId %s MinSz: %w", item.InstId, err)
 		}
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: item.InstId,
 			Symbol:    symbol,
 			CtVal:     ctValFloat,
-			PricePrec: tickSzInt,
-			// QtyPrec:   lotSzFloat,
+			PricePrec: 0,
+			QtyPrec:   0,
 			LotPrec:   lotSzFloat,
 			MinLot:    minSzFloat,
 			MinQty:    minSzFloat,
