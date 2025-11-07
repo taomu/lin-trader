@@ -18,7 +18,7 @@ type Broker interface {
 	//获取资金费率
 	GetFundingInfo() ([]bndata.FundingInfo, error)
 	//获取所有交易对
-	GetSymbolInfos() ([]types.SymbolInfo, error)
+	GetSymbolInfos() (map[string]types.SymbolInfo, error)
 	//获取24小时内的交易对价格变化
 	GetTickers24h() ([]types.Ticker24H, error)
 	//订阅深度

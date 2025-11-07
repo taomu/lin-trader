@@ -14,6 +14,8 @@ type LeverageBracket struct {
 	InitialLeverage  float64 `json:"initialLeverage"`  // 该层允许的最高初始杠杆倍数
 	NotionalCap      float64 `json:"notionalCap"`      // 该层对应的名义价值上限
 	NotionalFloor    float64 `json:"notionalFloor"`    // 该层对应的名义价值下限
+	QtyCap           float64 `json:"qtyCap"`           // 该层对应的数量上限
+	QtyFloor         float64 `json:"qtyFloor"`         // 该层对应的数量下限
 	MaintMarginRatio float64 `json:"maintMarginRatio"` // 该层对应的维持保证金率
 	Cum              float64 `json:"cum"`              // 速算数
 }

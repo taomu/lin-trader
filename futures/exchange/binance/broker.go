@@ -113,12 +113,30 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 }
 
 // GetSymbolInfos 获取所有交易对的信息
-func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
-	resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
+func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
+	err := b.updateSymbolInfoAll()
 	if err != nil {
 		return nil, err
 	}
-	return types.TransferBinanceSymbolInfo(resp)
+	return b.Datas.SymbolInfos, nil
+}
+
+// 更新交易对信息
+func (b *Broker) updateSymbolInfoAll() error {
+	if len(b.Datas.SymbolInfos) == 0 {
+		resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
+		if err != nil {
+			return err
+		}
+		symbolInfos, err := types.TransferBinanceSymbolInfo(resp)
+		if err != nil {
+			return err
+		}
+		for _, it := range symbolInfos {
+			b.Datas.SymbolInfos[it.Symbol] = it
+		}
+	}
+	return nil
 }
 
 // initSymbolInfos 初始化交易对信息

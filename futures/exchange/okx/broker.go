@@ -74,14 +74,30 @@ func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	return nil, nil
 }
-func (b *Broker) GetSymbolInfos() ([]types.SymbolInfo, error) {
-	resp, err := NewRestApi().Instruments(map[string]interface{}{
-		"instType": "SWAP",
-	})
+func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
+	err := b.updateSymbolInfoAll()
 	if err != nil {
 		return nil, err
 	}
-	return types.TransferOkxSymbolInfo(resp)
+	return b.Datas.SymbolInfos, nil
+}
+func (b *Broker) updateSymbolInfoAll() error {
+	if len(b.Datas.SymbolInfos) == 0 {
+		resp, err := NewRestApi().Instruments(map[string]interface{}{
+			"instType": "SWAP",
+		})
+		if err != nil {
+			return err
+		}
+		symbolInfos, err := types.TransferOkxSymbolInfo(resp)
+		if err != nil {
+			return err
+		}
+		for _, it := range symbolInfos {
+			b.Datas.SymbolInfos[it.Symbol] = it
+		}
+	}
+	return nil
 }
 func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	resp, err := NewRestApi().Tickers24h(map[string]interface{}{
@@ -310,7 +326,7 @@ func (b *Broker) toOkxSymbol(symbol string) (string, error) {
 	}
 	last4 := symbol[len(symbol)-4:]
 	if last4 == "USDT" || last4 == "USDC" {
-		return strings.ReplaceAll(symbol, last4, last4+"-SWAP"), nil
+		return strings.ReplaceAll(symbol, last4, "-"+last4+"-SWAP"), nil
 	}
 	return "", fmt.Errorf("toOkxSymbol error: %s", symbol)
 }
@@ -361,5 +377,74 @@ func (b *Broker) ClearAll() {
 }
 
 func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error) {
-	return nil, nil
+	params := map[string]interface{}{
+		"instType": "SWAP",
+		"tdMode":   "cross",
+	}
+	if symbol == "" {
+		return nil, fmt.Errorf("GetLeverageBracket error symbol is empty")
+	}
+	instFamily := strings.ReplaceAll(symbol, "USDT", "-USDT")
+	instFamily = strings.ReplaceAll(instFamily, "USDC", "-USDC")
+	params["instFamily"] = instFamily
+	resp, err := b.Api.GetPositionTiers(params)
+	if err != nil {
+		return nil, err
+	}
+	var apiResp struct {
+		Code string `json:"code"`
+		Msg  string `json:"msg"`
+		Data []struct {
+			MaxLever   string `json:"maxLever"`
+			InstFamily string `json:"instFamily"`
+			Tier       string `json:"tier"`
+			MinSz      string `json:"minSz"`
+			MaxSz      string `json:"maxSz"`
+			Imr        string `json:"imr"`
+			Mmr        string `json:"mmr"`
+		} `json:"data"`
+	}
+	if err = json.Unmarshal([]byte(resp), &apiResp); err != nil {
+		return nil, err
+	}
+	if apiResp.Code != "0" {
+		return nil, fmt.Errorf("okx position tiers error: %s", apiResp.Msg)
+	}
+	symbolInfoAll, err := b.GetSymbolInfos()
+	if err != nil {
+		return nil, err
+	}
+	symbolInfo, ok := symbolInfoAll[symbol]
+	if !ok {
+		return nil, fmt.Errorf("symbol %s not found in okx symbol infos", symbol)
+	}
+	brackets := make(map[string][]types.LeverageBracket)
+	for _, it := range apiResp.Data {
+		tier, _ := strconv.Atoi(it.Tier)
+		// imr, _ := strconv.ParseFloat(it.Imr, 64)
+		mmr, _ := strconv.ParseFloat(it.Mmr, 64)
+		lotMax, _ := strconv.ParseFloat(it.MaxSz, 64)
+		lotMin, _ := strconv.ParseFloat(it.MinSz, 64)
+		// initLev := 0.0
+		// if imr > 0 {
+		// 	initLev = 1.0 / imr
+		// }
+		maxLever, _ := strconv.ParseFloat(it.MaxLever, 64)
+		commonSymbol, _ := b.toCommonSymbol(it.InstFamily + "-SWAP")
+		_, ok := brackets[commonSymbol]
+		if !ok {
+			brackets[commonSymbol] = make([]types.LeverageBracket, 0)
+		}
+		brackets[commonSymbol] = append(brackets[commonSymbol], types.LeverageBracket{
+			Bracket:          tier,
+			InitialLeverage:  maxLever,
+			NotionalCap:      0,
+			NotionalFloor:    0,
+			QtyCap:           lotMax * symbolInfo.CtVal,
+			QtyFloor:         lotMin * symbolInfo.CtVal,
+			MaintMarginRatio: mmr,
+			Cum:              0,
+		})
+	}
+	return brackets, nil
 }

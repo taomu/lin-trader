@@ -150,3 +150,10 @@ func (ra *RestApi) CancelOrder(params map[string]interface{}, apiInfo *lintypes.
 	method := "POST"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+// 获取杠杆层级（持仓分层）
+func (ra *RestApi) GetPositionTiers(params map[string]interface{}) (string, error) {
+	url := "/api/v5/public/position-tiers"
+	method := "GET"
+	return ra.sendRequest(url, method, params, nil)
+}
