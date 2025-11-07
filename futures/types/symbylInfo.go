@@ -12,7 +12,7 @@ type SymbolInfo struct {
 	CtVal     float64 // 合约面值
 	PricePrec int     // 价格精度
 	QtyPrec   int     // 数量精度
-	LotPrec   int     // 张数精度
+	LotPrec   float64 // 张数精度
 	MinLot    float64 // 最小下单张数
 	MinQty    float64 // 最小下单数量
 	Status    string  // 状态 TRADING 交易中 、PREOPEN 预上线 、PRESTOP 预下线、STOP 下线
@@ -159,7 +159,7 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		lotSzInt, err := strconv.Atoi(item.LotSz)
+		lotSzFloat, err := strconv.ParseFloat(item.LotSz, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -172,8 +172,8 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 			Symbol:    symbol,
 			CtVal:     ctValFloat,
 			PricePrec: tickSzInt,
-			QtyPrec:   lotSzInt,
-			LotPrec:   lotSzInt,
+			// QtyPrec:   lotSzFloat,
+			LotPrec:   lotSzFloat,
 			MinLot:    minSzFloat,
 			MinQty:    minSzFloat,
 			Status:    status,
