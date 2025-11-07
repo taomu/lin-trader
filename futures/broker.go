@@ -23,8 +23,12 @@ type Broker interface {
 	GetTickers24h() ([]types.Ticker24H, error)
 	//订阅深度
 	SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth))
+	//订阅深度轻量
+	SubDepthLite(symbol string, onData func(updateData *types.Depth))
 	//取消订阅深度
 	UnSubDepth(symbol string)
+	//取消订阅深度轻量
+	UnSubDepthLite(symbol string)
 	//设置ws主机地址
 	SetWsHost(host string)
 	//设置rest主机地址

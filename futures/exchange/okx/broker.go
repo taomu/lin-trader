@@ -18,11 +18,13 @@ import (
 )
 
 type Broker struct {
-	Datas     *types.BrokerDatas
-	Api       *RestApi
-	ApiInfo   *lintypes.ApiInfo
-	wsAccount *util.ExcWebsocket
-	wsHost    string
+	Datas       *types.BrokerDatas
+	Api         *RestApi
+	ApiInfo     *lintypes.ApiInfo
+	wsAccount   *util.ExcWebsocket
+	wsHost      string
+	wsDepth     *util.ExcWebsocket
+	wsDepthLite *util.ExcWebsocket
 }
 
 func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
@@ -122,12 +124,33 @@ func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, sn
 	// b.wsDepth.Connect()
 }
 
+func (b *Broker) SubDepthLite(symbol string, onData func(updateData *types.Depth)) {
+	// if b.wsDepthLite == nil {
+	// 	b.wsDepthLite = util.NewExcWebsocket(b.WsUrl)
+	// }
+	// b.wsDepthLite.OnConnect = func() {
+	// 	b.wsDepthLite.Push("btcusdt@depth5@100ms")
+	// }
+	// b.wsDepthLite.OnMessage = func(msg string) {
+	// 	fmt.Println(msg)
+	// }
+	// b.wsDepthLite.Connect()
+}
+
 func (b *Broker) UnSubDepth(symbol string) {
 	// if b.wsDepth == nil {
 	// 	return
 	// }
 	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth@100ms"],"id": 1}`
 	// b.wsDepth.Push(msg)
+}
+
+func (b *Broker) UnSubDepthLite(symbol string) {
+	// if b.wsDepthLite == nil {
+	// 	return
+	// }
+	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth5@100ms"],"id": 1}`
+	// b.wsDepthLite.Push(msg)
 }
 
 func (b *Broker) GetPositions() ([]*types.Position, error) {
@@ -371,9 +394,12 @@ func (b *Broker) ClearAll() {
 	if b.wsAccount != nil {
 		b.wsAccount.Close()
 	}
-	// if b.wsDepth != nil {
-	// 	b.wsDepth.Close()
-	// }
+	if b.wsDepth != nil {
+		b.wsDepth.Close()
+	}
+	if b.wsDepthLite != nil {
+		b.wsDepthLite.Close()
+	}
 }
 
 func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error) {

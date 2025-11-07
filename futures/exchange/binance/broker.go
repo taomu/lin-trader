@@ -22,6 +22,7 @@ type Broker struct {
 	wsAccount       *util.ExcWebsocket
 	wsUrl           string
 	wsDepth         *util.ExcWebsocket
+	wsDepthLite     *util.ExcWebsocket
 	Depth           *types.Depth
 	listenKeyTicker *time.Ticker
 }
@@ -156,7 +157,40 @@ func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 	return nil, nil
 }
 
-// SubDepth 订阅交易对的深度信息
+// SubDepth 订阅交易对的轻量深度信息
+func (b *Broker) SubDepthLite(symbol string, onData func(updateData *types.Depth)) {
+	if b.wsDepthLite == nil {
+		b.wsDepthLite = util.NewExcWebsocket(b.wsUrl)
+	}
+	b.wsDepthLite.OnConnect = func() {
+		fmt.Println("binance depth lite connect")
+		msg := `{"method": "SUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth5@100ms"],"id": 1}`
+		b.wsDepthLite.Push(msg)
+	}
+	b.wsDepthLite.OnMessage = func(msg string) {
+		// fmt.Println(msg)
+		var wsDepthUpdateRes bndata.WsDepthUpdateRes
+		err := json.Unmarshal([]byte(msg), &wsDepthUpdateRes)
+		if err != nil {
+			fmt.Println("binance depth lite update unmarshal err:", err)
+			return
+		}
+		depthUpdate := bndata.TransferBinanceWsDepthUpdateRes(wsDepthUpdateRes)
+		onData(depthUpdate)
+	}
+	b.wsDepthLite.Connect()
+}
+
+// UnSubDepthLite 取消订阅交易对的轻量深度信息
+func (b *Broker) UnSubDepthLite(symbol string) {
+	if b.wsDepthLite == nil {
+		return
+	}
+	msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth5@100ms"],"id": 1}`
+	b.wsDepthLite.Push(msg)
+}
+
+// SubDepth 订阅交易对的全量深度信息
 func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth)) {
 	if b.wsDepth == nil {
 		b.wsDepth = util.NewExcWebsocket(b.wsUrl)
@@ -628,6 +662,9 @@ func (b *Broker) ClearAll() {
 	}
 	if b.wsDepth != nil {
 		b.wsDepth.Close()
+	}
+	if b.wsDepthLite != nil {
+		b.wsDepthLite.Close()
 	}
 	if b.listenKeyTicker != nil {
 		b.listenKeyTicker.Stop()
