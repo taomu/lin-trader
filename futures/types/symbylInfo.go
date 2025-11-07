@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -153,19 +154,19 @@ func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 		}
 		ctValFloat, err := strconv.ParseFloat(item.CtVal, 64)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing InstId %s CtVal: %w", item.InstId, err)
 		}
 		tickSzInt, err := strconv.Atoi(item.TickSz)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing InstId %s TickSz: %w", item.InstId, err)
 		}
 		lotSzFloat, err := strconv.ParseFloat(item.LotSz, 64)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing InstId %s LotSz: %w", item.InstId, err)
 		}
 		minSzFloat, err := strconv.ParseFloat(item.MinSz, 64)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing MinSz: %w", err)
 		}
 		symbolInfos = append(symbolInfos, SymbolInfo{
 			SymbolOri: item.InstId,
