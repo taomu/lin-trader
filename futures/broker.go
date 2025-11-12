@@ -47,6 +47,8 @@ type Broker interface {
 	PlaceOrder(order *types.Order) error
 	//获取杠杆层级 bn需要api, symbol=""时 获取全部
 	GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error)
+	//查询账户持仓方向
+	GetDualSidePosition() (string, error)
 }
 
 func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {

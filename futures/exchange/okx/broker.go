@@ -474,3 +474,7 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 	}
 	return brackets, nil
 }
+
+func (b *Broker) GetDualSidePosition() (string, error) {
+	return "", nil
+}

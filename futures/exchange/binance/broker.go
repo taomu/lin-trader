@@ -670,3 +670,22 @@ func (b *Broker) ClearAll() {
 		b.listenKeyTicker.Stop()
 	}
 }
+
+// 查询持仓方向
+func (b *Broker) GetDualSidePosition() (string, error) {
+	params := map[string]interface{}{}
+	resp, err := b.Api.GetAccountConfig(params, b.ApiInfo)
+	if err != nil {
+		return "", err
+	}
+	var accountConfig struct {
+		DualSidePosition bool `json:"dualSidePosition"`
+	}
+	if err := json.Unmarshal([]byte(resp), &accountConfig); err != nil {
+		return "", err
+	}
+	if accountConfig.DualSidePosition {
+		return "both", nil
+	}
+	return "single", nil
+}

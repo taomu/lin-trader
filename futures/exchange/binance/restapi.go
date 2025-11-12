@@ -265,3 +265,10 @@ func (ra *RestApi) GetLeverageBrackets(params map[string]interface{}, apiInfo *l
 	method := "GET"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+// 获取账户设置
+func (ra *RestApi) GetAccountConfig(params map[string]interface{}, apiInfo *lintypes.ApiInfo) (string, error) {
+	url := "/fapi/v1/accountConfig"
+	method := "GET"
+	return ra.sendRequest(url, method, params, apiInfo)
+}
