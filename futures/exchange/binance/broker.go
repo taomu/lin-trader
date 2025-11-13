@@ -124,19 +124,19 @@ func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
 
 // 更新交易对信息
 func (b *Broker) updateSymbolInfoAll() error {
-	if len(b.Datas.SymbolInfos) == 0 {
-		resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
-		if err != nil {
-			return err
-		}
-		symbolInfos, err := types.TransferBinanceSymbolInfo(resp)
-		if err != nil {
-			return err
-		}
-		for _, it := range symbolInfos {
-			b.Datas.SymbolInfos[it.Symbol] = it
-		}
+	// if len(b.Datas.SymbolInfos) == 0 {
+	resp, err := b.Api.ExchangeInfo(map[string]interface{}{})
+	if err != nil {
+		return err
 	}
+	symbolInfos, err := types.TransferBinanceSymbolInfo(resp)
+	if err != nil {
+		return err
+	}
+	for _, it := range symbolInfos {
+		b.Datas.SymbolInfos[it.Symbol] = it
+	}
+	// }
 	return nil
 }
 

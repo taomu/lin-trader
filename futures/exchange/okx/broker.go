@@ -84,21 +84,21 @@ func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
 	return b.Datas.SymbolInfos, nil
 }
 func (b *Broker) updateSymbolInfoAll() error {
-	if len(b.Datas.SymbolInfos) == 0 {
-		resp, err := NewRestApi().Instruments(map[string]interface{}{
-			"instType": "SWAP",
-		})
-		if err != nil {
-			return err
-		}
-		symbolInfos, err := types.TransferOkxSymbolInfo(resp)
-		if err != nil {
-			return err
-		}
-		for _, it := range symbolInfos {
-			b.Datas.SymbolInfos[it.Symbol] = it
-		}
+	// if len(b.Datas.SymbolInfos) == 0 {
+	resp, err := NewRestApi().Instruments(map[string]interface{}{
+		"instType": "SWAP",
+	})
+	if err != nil {
+		return err
 	}
+	symbolInfos, err := types.TransferOkxSymbolInfo(resp)
+	if err != nil {
+		return err
+	}
+	for _, it := range symbolInfos {
+		b.Datas.SymbolInfos[it.Symbol] = it
+	}
+	// }
 	return nil
 }
 func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
