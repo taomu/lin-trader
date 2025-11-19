@@ -122,18 +122,19 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	var err error
 	fullURL := ra.host + path
 
-	if method == "GET" || method == "DELETE" {
+	switch method {
+	case "GET", "DELETE":
 		qs := values.Encode()
 		if qs != "" {
 			fullURL = fullURL + "?" + qs
 		}
 		req, err = http.NewRequest(method, fullURL, nil)
-	} else if method == "POST" || method == "PUT" {
+	case "POST", "PUT":
 		// POST/PUT: 使用 form-urlencoded body（不要用 JSON）
 		body := values.Encode()
 		req, err = http.NewRequest(method, fullURL, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	} else {
+	default:
 		return "", fmt.Errorf("%s OK_Api unsupported http method: %s", fullURL, method)
 	}
 	if err != nil {
