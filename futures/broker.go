@@ -15,7 +15,7 @@ type Broker interface {
 	//获取溢价指数
 	GetPremium(symbol string) ([]types.Premium, error)
 	//获取资金费率
-	GetFundingInfo(symbol string) (*types.FundingRate, error)
+	GetFundingRate(symbol string) (*types.FundingRate, error)
 	//获取所有交易对
 	GetSymbolInfos() (map[string]types.SymbolInfo, error)
 	//获取24小时内的交易对价格变化

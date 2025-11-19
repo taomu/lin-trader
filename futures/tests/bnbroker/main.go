@@ -52,7 +52,7 @@ func queryPremium(broker futures.Broker) {
 	}
 }
 func queryFundingRate(broker futures.Broker) {
-	fundingRate, err := broker.GetFundingInfo("BTCUSDT")
+	fundingRate, err := broker.GetFundingRate("BTCUSDT")
 	if err != nil {
 		fmt.Println(err)
 		return

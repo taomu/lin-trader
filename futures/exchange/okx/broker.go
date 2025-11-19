@@ -63,7 +63,7 @@ func (b *Broker) SetRestHost(host string) {
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (b *Broker) GetFundingInfo(symbol string) (*types.FundingRate, error) {
+func (b *Broker) GetFundingRate(symbol string) (*types.FundingRate, error) {
 	symbolOri, err := b.ToOriSymbol(symbol)
 	if err != nil {
 		return nil, err

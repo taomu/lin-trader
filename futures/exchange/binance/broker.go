@@ -103,11 +103,11 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 	return retDatas, nil
 }
 
-// GetFundingInfo 获取交易对的资金信息
-func (b *Broker) GetFundingInfo(symbol string) (*types.FundingRate, error) {
+// GetFundingRate 获取交易对的资金信息
+func (b *Broker) GetFundingRate(symbol string) (*types.FundingRate, error) {
 	params := map[string]interface{}{}
 	if symbol == "" {
-		return nil, fmt.Errorf("BN_Broker GetFundingInfo func: param symbol is empty")
+		return nil, fmt.Errorf("BN_Broker GetFundingRate func: param symbol is empty")
 	}
 	params["symbol"] = symbol
 	resp, err := b.Api.PremiumIndex(params)
