@@ -51,15 +51,13 @@ func queryPremium(broker futures.Broker) {
 		fmt.Println(premium)
 	}
 }
-func queryFundingInfo(broker futures.Broker) {
-	fundingInfos, err := broker.GetFundingInfo()
+func queryFundingRate(broker futures.Broker) {
+	fundingRate, err := broker.GetFundingInfo("BTCUSDT")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	for _, fundingInfo := range fundingInfos {
-		fmt.Println(fundingInfo)
-	}
+	fmt.Println(fundingRate)
 }
 
 func getLeverageBracket(broker futures.Broker) {

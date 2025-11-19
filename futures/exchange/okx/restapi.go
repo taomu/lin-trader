@@ -131,7 +131,7 @@ func (ra *RestApi) GetPositions(params map[string]interface{}, apiInfo *lintypes
 }
 
 // 获取资金费率信息
-func (ra *RestApi) GetPremium(params map[string]interface{}) (string, error) {
+func (ra *RestApi) GetFundingRate(params map[string]interface{}) (string, error) {
 	url := "/api/v5/public/funding-rate"
 	method := "GET"
 	return ra.sendRequest(url, method, params, nil)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/taomu/lin-trader/futures/exchange/binance"
-	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
 	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
@@ -16,7 +15,7 @@ type Broker interface {
 	//获取溢价指数
 	GetPremium(symbol string) ([]types.Premium, error)
 	//获取资金费率
-	GetFundingInfo() ([]bndata.FundingInfo, error)
+	GetFundingInfo(symbol string) (*types.FundingRate, error)
 	//获取所有交易对
 	GetSymbolInfos() (map[string]types.SymbolInfo, error)
 	//获取24小时内的交易对价格变化
@@ -49,6 +48,10 @@ type Broker interface {
 	GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error)
 	//查询账户持仓方向
 	GetDualSidePosition() (string, error)
+	//转为标准symbol
+	ToStdSymbol(symbol string) (string, error)
+	//转为原始symbol
+	ToOriSymbol(symbol string) (string, error)
 }
 
 func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, error) {

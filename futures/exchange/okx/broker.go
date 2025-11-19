@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	okdata "github.com/taomu/lin-trader/futures/exchange/okx/data"
 	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
@@ -60,21 +59,28 @@ func (b *Broker) SetRestHost(host string) {
 	}
 }
 
+// 获取溢价指数
 func (b *Broker) GetPremium(symbol string) ([]types.Premium, error) {
-	params := map[string]interface{}{
-		"instId": symbol,
-	}
-	if symbol == "" {
-		params["instId"] = "ANY"
-	}
-	resp, err := b.Api.GetPremium(params)
+	return nil, fmt.Errorf("not implemented")
+}
+func (b *Broker) GetFundingInfo(symbol string) (*types.FundingRate, error) {
+	symbolOri, err := b.ToOriSymbol(symbol)
 	if err != nil {
 		return nil, err
 	}
-	return types.TransferOkxPremium(resp)
-}
-func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
-	return nil, nil
+	params := map[string]interface{}{
+		"instId": symbolOri,
+	}
+	resp, err := b.Api.GetFundingRate(params)
+	if err != nil {
+		return nil, err
+	}
+	var fundingRateRes okdata.FundingRateResp
+	err = json.Unmarshal([]byte(resp), &fundingRateRes)
+	if err != nil {
+		return nil, err
+	}
+	return okdata.TransferOkxFundingRate(&fundingRateRes, b.ToStdSymbol)
 }
 func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
 	err := b.updateSymbolInfoAll()
@@ -112,45 +118,19 @@ func (b *Broker) GetTickers24h() ([]types.Ticker24H, error) {
 }
 
 func (b *Broker) SubDepth(symbol string, onData func(updateData *types.Depth, snapData *types.Depth)) {
-	// if b.wsDepth == nil {
-	// 	b.wsDepth = util.NewExcWebsocket(b.WsUrl)
-	// }
-	// b.wsDepth.OnConnect = func() {
-	// 	b.wsDepth.Push("btcusdt@depth@100ms")
-	// }
-	// b.wsDepth.OnMessage = func(msg string) {
-	// 	fmt.Println(msg)
-	// }
-	// b.wsDepth.Connect()
+
 }
 
 func (b *Broker) SubDepthLite(symbol string, onData func(updateData *types.Depth)) {
-	// if b.wsDepthLite == nil {
-	// 	b.wsDepthLite = util.NewExcWebsocket(b.WsUrl)
-	// }
-	// b.wsDepthLite.OnConnect = func() {
-	// 	b.wsDepthLite.Push("btcusdt@depth5@100ms")
-	// }
-	// b.wsDepthLite.OnMessage = func(msg string) {
-	// 	fmt.Println(msg)
-	// }
-	// b.wsDepthLite.Connect()
+
 }
 
 func (b *Broker) UnSubDepth(symbol string) {
-	// if b.wsDepth == nil {
-	// 	return
-	// }
-	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth@100ms"],"id": 1}`
-	// b.wsDepth.Push(msg)
+
 }
 
 func (b *Broker) UnSubDepthLite(symbol string) {
-	// if b.wsDepthLite == nil {
-	// 	return
-	// }
-	// msg := `{"method": "UNSUBSCRIBE","params": ["` + strings.ToLower(symbol) + `@depth5@100ms"],"id": 1}`
-	// b.wsDepthLite.Push(msg)
+
 }
 
 func (b *Broker) GetPositions() ([]*types.Position, error) {
@@ -324,7 +304,7 @@ func (b *Broker) SubAccount(onData func(updateData types.WsData)) {
 }
 
 func (b *Broker) PlaceOrder(order *types.Order) error {
-	params, err := types.ToOkxOrder(order, b.toOkxSymbol, b.Datas.SymbolInfos[order.Symbol])
+	params, err := types.ToOkxOrder(order, b.ToOriSymbol, b.Datas.SymbolInfos[order.Symbol])
 	if err != nil {
 		return err
 	}
@@ -343,7 +323,7 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 	return nil
 }
 
-func (b *Broker) toOkxSymbol(symbol string) (string, error) {
+func (b *Broker) ToOriSymbol(symbol string) (string, error) {
 	if len(symbol) < 4 {
 		return symbol, nil
 	}
@@ -354,7 +334,7 @@ func (b *Broker) toOkxSymbol(symbol string) (string, error) {
 	return "", fmt.Errorf("toOkxSymbol error: %s", symbol)
 }
 
-func (b *Broker) toCommonSymbol(symbol string) (string, error) {
+func (b *Broker) ToStdSymbol(symbol string) (string, error) {
 	//根据-分割字符串
 	parts := strings.Split(symbol, "-")
 	if len(parts) != 3 {
@@ -367,7 +347,7 @@ func (b *Broker) toCommonSymbol(symbol string) (string, error) {
 }
 
 func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
-	okxSymbol, err := b.toOkxSymbol(symbol)
+	okxSymbol, err := b.ToOriSymbol(symbol)
 	if err != nil {
 		return err
 	}
@@ -447,21 +427,16 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 	brackets := make(map[string][]types.LeverageBracket)
 	for _, it := range apiResp.Data {
 		tier, _ := strconv.Atoi(it.Tier)
-		// imr, _ := strconv.ParseFloat(it.Imr, 64)
 		mmr, _ := strconv.ParseFloat(it.Mmr, 64)
 		lotMax, _ := strconv.ParseFloat(it.MaxSz, 64)
 		lotMin, _ := strconv.ParseFloat(it.MinSz, 64)
-		// initLev := 0.0
-		// if imr > 0 {
-		// 	initLev = 1.0 / imr
-		// }
 		maxLever, _ := strconv.ParseFloat(it.MaxLever, 64)
-		commonSymbol, _ := b.toCommonSymbol(it.InstFamily + "-SWAP")
-		_, ok := brackets[commonSymbol]
+		stdSymbol, _ := b.ToStdSymbol(it.InstFamily + "-SWAP")
+		_, ok := brackets[stdSymbol]
 		if !ok {
-			brackets[commonSymbol] = make([]types.LeverageBracket, 0)
+			brackets[stdSymbol] = make([]types.LeverageBracket, 0)
 		}
-		brackets[commonSymbol] = append(brackets[commonSymbol], types.LeverageBracket{
+		brackets[stdSymbol] = append(brackets[stdSymbol], types.LeverageBracket{
 			Bracket:          tier,
 			InitialLeverage:  maxLever,
 			NotionalCap:      0,

@@ -104,13 +104,21 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 }
 
 // GetFundingInfo 获取交易对的资金信息
-func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
+func (b *Broker) GetFundingInfo(symbol string) (*types.FundingRate, error) {
 	params := map[string]interface{}{}
-	resp, err := b.Api.FundingInfo(params)
+	if symbol == "" {
+		return nil, fmt.Errorf("BN_Broker GetFundingInfo func: param symbol is empty")
+	}
+	params["symbol"] = symbol
+	resp, err := b.Api.PremiumIndex(params)
 	if err != nil {
 		return nil, err
 	}
-	return bndata.TransferBinanceFundingInfo(resp)
+	var premiumIndexResp bndata.PremiumIndexResp
+	if err := json.Unmarshal([]byte(resp), &premiumIndexResp); err != nil {
+		return nil, err
+	}
+	return bndata.TransferBinanceFundingRate(&premiumIndexResp)
 }
 
 // GetSymbolInfos 获取所有交易对的信息
@@ -604,7 +612,7 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 	if !ok {
 		return fmt.Errorf("symbol info not found from symbolInfo")
 	}
-	params, err := types.ToBinanceOrderParams(order, b.ToBinanceSymbol, symbolInfo)
+	params, err := types.ToBinanceOrderParams(order, b.ToOriSymbol, symbolInfo)
 	if err != nil {
 		return err
 	}
@@ -624,14 +632,19 @@ func (b *Broker) PlaceOrder(order *types.Order) error {
 	return fmt.Errorf("order id is 0")
 }
 
-// ToBinanceSymbol 转为币安交易对
-func (b *Broker) ToBinanceSymbol(symbol string) (string, error) {
-	return strings.ToUpper(symbol), nil
+// ToOriSymbol 转为原始交易对
+func (b *Broker) ToOriSymbol(symbol string) (string, error) {
+	return symbol, nil
+}
+
+// ToStdSymbol 转为标准交易对
+func (b *Broker) ToStdSymbol(symbol string) (string, error) {
+	return symbol, nil
 }
 
 // CancelOrder 取消订单
 func (b *Broker) CancelOrder(clientOrderId string, symbol string) error {
-	binanceSymbol, err := b.ToBinanceSymbol(symbol)
+	binanceSymbol, err := b.ToOriSymbol(symbol)
 	if err != nil {
 		return err
 	}
