@@ -55,7 +55,7 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 		if len(params) > 0 {
 			b, err := json.Marshal(params)
 			if err != nil {
-				return "", fmt.Errorf("JSON编码失败: %v", err)
+				return "", fmt.Errorf(fullURL+"JSON编码失败: err:%v params:%v", err, params)
 			}
 			bodyStr = string(b)
 		}
@@ -71,7 +71,7 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if err != nil {
-		return "", fmt.Errorf("创建请求失败: %v", err)
+		return "", fmt.Errorf(fullURL+"创建请求失败: %v", err)
 	}
 
 	// --------- 4) 设置认证头 ---------
@@ -93,17 +93,17 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 	// --------- 5) 发送请求 ---------
 	resp, err := ra.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("请求发送失败: %v", err)
+		return "", fmt.Errorf(fullURL+"请求发送失败: %v", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("读取响应失败: %v", err)
+		return "", fmt.Errorf(fullURL+"读取响应失败: %v", err)
 	}
 
 	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(respBody))
+		return "", fmt.Errorf(fullURL+"请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(respBody))
 	}
 
 	return string(respBody), nil

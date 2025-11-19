@@ -16,7 +16,9 @@ func main() {
 	//测试查询持仓
 	// queryPositions(broker)
 	//测试查询杠杆层级
-	queryLeverageBrackets(broker)
+	// queryLeverageBrackets(broker)
+	//测试查询资金费率
+	queryFundingRate(broker)
 }
 func showOkExample(broker futures.Broker) {
 	// premium, _ := broker.GetPremium()
@@ -43,4 +45,14 @@ func queryLeverageBrackets(broker futures.Broker) {
 		return
 	}
 	fmt.Printf("查询到杠杆层级：%+v\n", brackets)
+}
+
+// 查询资金费率
+func queryFundingRate(broker futures.Broker) {
+	fundingRate, err := broker.GetFundingRate("BTCUSDT")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(fundingRate)
 }

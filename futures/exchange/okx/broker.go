@@ -73,19 +73,19 @@ func (b *Broker) GetFundingRate(symbol string) (*types.FundingRate, error) {
 	}
 	resp, err := b.Api.GetFundingRate(params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("OK_Broker GetFundingRate request err: %w", err)
 	}
 	var fundingRateRes okdata.FundingRateResp
 	err = json.Unmarshal([]byte(resp), &fundingRateRes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("OK_Broker GetFundingRate Unmarshal err: %w", err)
 	}
 	return okdata.TransferOkxFundingRate(&fundingRateRes, b.ToStdSymbol)
 }
 func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
 	err := b.updateSymbolInfoAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("OK_Broker GetSymbolInfos updateSymbolInfoAll err: %w", err)
 	}
 	return b.Datas.SymbolInfos, nil
 }
