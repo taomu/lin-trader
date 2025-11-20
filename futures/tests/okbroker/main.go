@@ -4,21 +4,36 @@ import (
 	"fmt"
 
 	"github.com/taomu/lin-trader/futures"
+	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
 func main() {
-	key := "f99fbeeb-a81d-4be3-8b4b-1eeb59370aee"
-	secret := "F593239483463966769FBBE46743DBAA"
-	passphrase := "@Carp008"
+	// key := "f99fbeeb-a81d-4be3-8b4b-1eeb59370aee"
+	// secret := "F593239483463966769FBBE46743DBAA"
+	// passphrase := "@Carp008"
+	key := "aceea1c3-a38f-4d8e-8d52-4f09f521506f"
+	secret := "5DC18FDFA93EF378D383AC4454A01165"
+	passphrase := "Z1345zbnm."
 	broker, _ := futures.NewBroker(lintypes.PLAT_OKX, key, secret, passphrase)
+	broker.SetWsHost("ws://okws.keetu.com")
 	// showOkExample(broker)
 	//测试查询持仓
 	// queryPositions(broker)
 	//测试查询杠杆层级
 	// queryLeverageBrackets(broker)
 	//测试查询资金费率
-	queryFundingRate(broker)
+	// queryFundingRate(broker)
+	fmt.Println("订阅子账户资金变化")
+	err := broker.Init()
+	if err != nil {
+		fmt.Println("OK_Broker Init err:", err)
+		return
+	}
+	broker.SubAccount(func(updateData types.WsData) {
+		fmt.Println(updateData)
+	})
+	select {}
 }
 func showOkExample(broker futures.Broker) {
 	// premium, _ := broker.GetPremium()

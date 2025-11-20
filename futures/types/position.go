@@ -1,5 +1,11 @@
 package types
 
+const (
+	PosSideLong  = "LONG"
+	PosSideShort = "SHORT"
+	PosSideBoth  = "BOTH"
+)
+
 type Position struct {
 	Symbol           string  `json:"symbol"`
 	PosSide          string  `json:"posSide"`

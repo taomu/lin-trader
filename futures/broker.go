@@ -33,7 +33,7 @@ type Broker interface {
 	//设置rest主机地址
 	SetRestHost(host string)
 	//初始化broker
-	Init()
+	Init() error
 	//取消订单
 	CancelOrder(clientOrderId string, symbol string) error // 取消订单
 	//清除所有连接定时器等

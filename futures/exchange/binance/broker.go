@@ -42,8 +42,12 @@ func NewBroker(apiInfo *lintypes.ApiInfo) *Broker {
 }
 
 // Init 初始化Broker，包括获取交易对信息
-func (b *Broker) Init() {
-	b.initSymbolInfos()
+func (b *Broker) Init() error {
+	err := b.initSymbolInfos()
+	if err != nil {
+		return fmt.Errorf("BN_Broker Init initSymbolInfos err: %w", err)
+	}
+	return nil
 }
 
 // GetDatas 获取Broker的数据
@@ -149,15 +153,15 @@ func (b *Broker) updateSymbolInfoAll() error {
 }
 
 // initSymbolInfos 初始化交易对信息
-func (b *Broker) initSymbolInfos() {
+func (b *Broker) initSymbolInfos() error {
 	symbolInfos, err := b.GetSymbolInfos()
 	if err != nil {
-		fmt.Println("binance init symbol infos err:", err)
-		return
+		return fmt.Errorf("BN_Broker initSymbolInfos err: %w", err)
 	}
 	for _, symbolInfo := range symbolInfos {
 		b.Datas.SymbolInfos[symbolInfo.Symbol] = symbolInfo
 	}
+	return nil
 }
 
 // GetTickers24h 获取所有交易对的24小时统计信息
