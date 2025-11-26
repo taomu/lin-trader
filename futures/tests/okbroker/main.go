@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/taomu/lin-trader/futures"
-	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 )
 
@@ -22,17 +22,17 @@ func main() {
 	// queryPositions(broker)
 	//测试查询杠杆层级
 	// queryLeverageBrackets(broker)
-	//测试查询资金费率
-	// queryFundingRate(broker)
-	fmt.Println("订阅子账户资金变化")
-	err := broker.Init()
-	if err != nil {
-		fmt.Println("OK_Broker Init err:", err)
-		return
-	}
-	broker.SubAccount(func(updateData types.WsData) {
-		fmt.Println(updateData)
-	})
+	// 测试查询资金费率
+	queryFundingRate(broker)
+	// fmt.Println("订阅子账户资金变化")
+	// err := broker.Init()
+	// if err != nil {
+	// 	fmt.Println("OK_Broker Init err:", err)
+	// 	return
+	// }
+	// broker.SubAccount(func(updateData types.WsData) {
+	// 	fmt.Println(updateData)
+	// })
 	select {}
 }
 func showOkExample(broker futures.Broker) {
@@ -64,10 +64,11 @@ func queryLeverageBrackets(broker futures.Broker) {
 
 // 查询资金费率
 func queryFundingRate(broker futures.Broker) {
-	fundingRate, err := broker.GetFundingRate("BTCUSDT")
+	fundingRate, err := broker.GetFundingRate("MMTUSDT")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(fundingRate)
+	//格式化为utc+8
+	fmt.Println("下一个结算时间：", time.Unix(fundingRate.NextSettleTs/1000, 0))
 }

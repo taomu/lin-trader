@@ -35,7 +35,7 @@ func TransferOkxFundingRate(resp *FundingRateResp, toStdSymbol func(string) (str
 	var rates []*types.FundingRate
 	for _, item := range resp.Data {
 		rate, _ := strconv.ParseFloat(item.FundingRate, 64)
-		nextSettleTs, _ := strconv.ParseInt(item.NextFundingTime, 10, 64)
+		nextSettleTs, _ := strconv.ParseInt(item.FundingTime, 10, 64)
 		maxRate, _ := strconv.ParseFloat(item.MaxFundingRate, 64)
 		minRate, _ := strconv.ParseFloat(item.MinFundingRate, 64)
 		stdSymbol, err := toStdSymbol(item.InstId)
