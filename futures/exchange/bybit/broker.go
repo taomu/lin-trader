@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
 	"github.com/taomu/lin-trader/pkg/util"
@@ -191,4 +192,8 @@ func (b *Broker) ToStdSymbol(symbol string) (string, error) {
 
 func (b *Broker) ToOriSymbol(symbol string) (string, error) {
 	return symbol, nil
+}
+
+func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
+	return nil, fmt.Errorf("not implemented")
 }

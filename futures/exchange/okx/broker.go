@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	okdata "github.com/taomu/lin-trader/futures/exchange/okx/data"
 	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
@@ -452,4 +453,8 @@ func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageB
 
 func (b *Broker) GetDualSidePosition() (string, error) {
 	return "", nil
+}
+
+func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
+	return nil, fmt.Errorf("not implemented")
 }

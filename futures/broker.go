@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/taomu/lin-trader/futures/exchange/binance"
+	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
 	"github.com/taomu/lin-trader/futures/exchange/bybit"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
 	"github.com/taomu/lin-trader/futures/types"
@@ -17,6 +18,8 @@ type Broker interface {
 	GetPremium(symbol string) ([]types.Premium, error)
 	//获取资金费率
 	GetFundingRate(symbol string) (*types.FundingRate, error)
+	//获取资金费率信息 针对币安
+	GetFundingInfo() ([]bndata.FundingInfo, error)
 	//获取所有交易对
 	GetSymbolInfos() (map[string]types.SymbolInfo, error)
 	//获取24小时内的交易对价格变化

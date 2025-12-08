@@ -125,6 +125,16 @@ func (b *Broker) GetFundingRate(symbol string) (*types.FundingRate, error) {
 	return bndata.TransferBinanceFundingRate(&premiumIndexResp)
 }
 
+// GetFundingInfo 获取交易对的资金信息(周期，上下限)
+func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
+	params := map[string]interface{}{}
+	resp, err := b.Api.FundingInfo(params)
+	if err != nil {
+		return nil, err
+	}
+	return bndata.TransferBinanceFundingInfo(resp)
+}
+
 // GetSymbolInfos 获取所有交易对的信息
 func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
 	err := b.updateSymbolInfoAll()
