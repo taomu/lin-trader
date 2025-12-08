@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/taomu/lin-trader/futures/exchange/binance"
+	"github.com/taomu/lin-trader/futures/exchange/bybit"
 	"github.com/taomu/lin-trader/futures/exchange/okx"
 	"github.com/taomu/lin-trader/futures/types"
 	"github.com/taomu/lin-trader/pkg/lintypes"
@@ -65,6 +66,8 @@ func NewBroker(plat lintypes.PLAT, apiKey, apiSecret, apiPass string) (Broker, e
 		return binance.NewBroker(apiInfo), nil
 	case lintypes.PLAT_OKX:
 		return okx.NewBroker(apiInfo), nil
+	case lintypes.PLAT_BYBIT:
+		return bybit.NewBroker(apiInfo), nil
 	default:
 		return nil, fmt.Errorf("unknown platform: %s", plat)
 	}
