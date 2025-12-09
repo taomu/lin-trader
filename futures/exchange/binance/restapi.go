@@ -107,7 +107,7 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 			// RSA：返回 base64，需要 url-encode 放到 signature
 			base64Sig, err := createRSASignBase64([]byte(apiInfo.Secret), payload)
 			if err != nil {
-				return "", fmt.Errorf("OK_Api RSA 签名失败: %v", err)
+				return "", fmt.Errorf("BN_API RSA 签名失败: %v", err)
 			}
 			// url.Values.Encode 会自动做 QueryEscape，所以直接 Set(base64) 再 Encode 即可
 			values.Set("signature", base64Sig)
@@ -135,10 +135,10 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 		req, err = http.NewRequest(method, fullURL, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	default:
-		return "", fmt.Errorf("%s OK_Api unsupported http method: %s", fullURL, method)
+		return "", fmt.Errorf("%s BN_API unsupported http method: %s", fullURL, method)
 	}
 	if err != nil {
-		return "", fmt.Errorf("%s %s OK_Api 创建请求失败: %v", fullURL, method, err)
+		return "", fmt.Errorf("%s %s BN_API 创建请求失败: %v", fullURL, method, err)
 	}
 
 	// API key header（不管 HMAC 还是 RSA 都需要）
@@ -153,17 +153,17 @@ func (ra *RestApi) sendRequest(path, method string, params map[string]interface{
 
 	resp, err := ra.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%s %s OK_Api 请求发送失败: %v", fullURL, method, err)
+		return "", fmt.Errorf("%s %s BN_API 请求发送失败: %v", fullURL, method, err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("%s %s OK_Api 读取响应失败: %v", fullURL, method, err)
+		return "", fmt.Errorf("%s %s BN_API 读取响应失败: %v", fullURL, method, err)
 	}
 
 	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("%s %s OK_Api 请求失败，状态码: %d, 响应: %s", fullURL, method, resp.StatusCode, string(respBody))
+		return "", fmt.Errorf("%s %s BN_API 请求失败，状态码: %d, 响应: %s", fullURL, method, resp.StatusCode, string(respBody))
 	}
 
 	return string(respBody), nil
