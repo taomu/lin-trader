@@ -3,6 +3,7 @@ package bybit
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	bndata "github.com/taomu/lin-trader/futures/exchange/binance/data"
@@ -179,7 +180,78 @@ func (b *Broker) ClearAll() {
 }
 
 func (b *Broker) GetLeverageBracket(symbol string) (map[string][]types.LeverageBracket, error) {
-	return nil, fmt.Errorf("not implemented")
+	params := map[string]interface{}{}
+	cate := "linear"
+	if symbol != "" {
+		s := strings.ToUpper(symbol)
+		if strings.HasSuffix(s, "USD") && !strings.HasSuffix(s, "USDT") && !strings.HasSuffix(s, "USDC") {
+			cate = "inverse"
+		}
+		params["symbol"] = s
+	}
+	params["category"] = cate
+	resp, err := b.Api.GetRiskLimit(params)
+	if err != nil {
+		return nil, err
+	}
+	var raw struct {
+		RetCode int    `json:"retCode"`
+		RetMsg  string `json:"retMsg"`
+		Result  struct {
+			Category string `json:"category"`
+			List     []struct {
+				ID                int    `json:"id"`
+				Symbol            string `json:"symbol"`
+				RiskLimitValue    string `json:"riskLimitValue"`
+				MaintenanceMargin string `json:"maintenanceMargin"`
+				InitialMargin     string `json:"initialMargin"`
+				MaxLeverage       string `json:"maxLeverage"`
+			} `json:"list"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(resp), &raw); err != nil {
+		return nil, err
+	}
+	if raw.RetCode != 0 {
+		return nil, fmt.Errorf("GetLeverageBracket err: %s", raw.RetMsg)
+	}
+	type rec struct {
+		ID     int
+		Cap    float64
+		MMR    float64
+		MaxLev float64
+	}
+	group := make(map[string][]rec)
+	for _, it := range raw.Result.List {
+		cap := util.StrToFloat64(it.RiskLimitValue)
+		mmr := util.StrToFloat64(it.MaintenanceMargin)
+		maxLev := util.StrToFloat64(it.MaxLeverage)
+		stdSymbol, _ := b.ToStdSymbol(it.Symbol)
+		group[stdSymbol] = append(group[stdSymbol], rec{ID: it.ID, Cap: cap, MMR: mmr, MaxLev: maxLev})
+	}
+	ret := make(map[string][]types.LeverageBracket)
+	for sym, arr := range group {
+		sort.Slice(arr, func(i, j int) bool { return arr[i].Cap < arr[j].Cap })
+		brs := make([]types.LeverageBracket, 0, len(arr))
+		for i, r := range arr {
+			floor := 0.0
+			if i > 0 {
+				floor = arr[i-1].Cap
+			}
+			brs = append(brs, types.LeverageBracket{
+				Bracket:          r.ID,
+				InitialLeverage:  r.MaxLev,
+				NotionalCap:      r.Cap,
+				NotionalFloor:    floor,
+				QtyCap:           0,
+				QtyFloor:         0,
+				MaintMarginRatio: r.MMR,
+				Cum:              0,
+			})
+		}
+		ret[sym] = brs
+	}
+	return ret, nil
 }
 
 func (b *Broker) GetDualSidePosition() (string, error) {

@@ -140,3 +140,9 @@ func (ra *RestApi) CancelOrder(params map[string]interface{}, apiInfo *lintypes.
 	method := "POST"
 	return ra.sendRequest(url, method, params, apiInfo)
 }
+
+func (ra *RestApi) GetRiskLimit(params map[string]interface{}) (string, error) {
+	url := "/v5/market/risk-limit"
+	method := "GET"
+	return ra.sendRequest(url, method, params, nil)
+}
