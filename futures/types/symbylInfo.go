@@ -111,6 +111,76 @@ func TransferBinanceSymbolInfo(resp string) ([]SymbolInfo, error) {
 	return symbolInfos, nil
 }
 
+func TransferBybitSymbolInfo(resp string) ([]SymbolInfo, error) {
+	var raw struct {
+		RetCode int    `json:"retCode"`
+		RetMsg  string `json:"retMsg"`
+		Result  struct {
+			Category string `json:"category"`
+			List     []struct {
+				Symbol       string `json:"symbol"`
+				Status       string `json:"status"`
+				LaunchTime   string `json:"launchTime"`
+				DeliveryTime string `json:"deliveryTime"`
+				PriceFilter  struct {
+					TickSize string `json:"tickSize"`
+				} `json:"priceFilter"`
+				LotSizeFilter struct {
+					MinOrderQty string `json:"minOrderQty"`
+					QtyStep     string `json:"qtyStep"`
+				} `json:"lotSizeFilter"`
+			} `json:"list"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(resp), &raw); err != nil {
+		return nil, err
+	}
+	if raw.RetCode != 0 {
+		return nil, fmt.Errorf("retCode:%d retMsg:%s", raw.RetCode, raw.RetMsg)
+	}
+	var symbolInfos []SymbolInfo
+	for _, it := range raw.Result.List {
+		tick := strings.TrimRight(it.PriceFilter.TickSize, "0")
+		step := strings.TrimRight(it.LotSizeFilter.QtyStep, "0")
+		pricePrec := strings.Count(tick, "0") - 1
+		if pricePrec < 0 {
+			pricePrec = 0
+		}
+		qtyPrec := strings.Count(step, "0") - 1
+		if qtyPrec < 0 {
+			qtyPrec = 0
+		}
+		minQty, _ := strconv.ParseFloat(it.LotSizeFilter.MinOrderQty, 64)
+		onlineTs, _ := strconv.ParseInt(it.LaunchTime, 10, 64)
+		offlineTs, _ := strconv.ParseInt(it.DeliveryTime, 10, 64)
+		status := "TRADING"
+		s := strings.ToLower(it.Status)
+		if s == "prelisting" || s == "pendingtrading" {
+			status = "PREOPEN"
+		}
+		if s == "cancelonly" || s == "pause" || s == "paused" {
+			status = "PRESTOP"
+		}
+		if s == "closed" || s == "settling" || s == "delisted" || s == "dellisting" {
+			status = "STOP"
+		}
+		symbolInfos = append(symbolInfos, SymbolInfo{
+			SymbolOri: it.Symbol,
+			Symbol:    it.Symbol,
+			CtVal:     0,
+			PricePrec: pricePrec,
+			QtyPrec:   qtyPrec,
+			LotPrec:   0,
+			MinLot:    0,
+			MinQty:    minQty,
+			Status:    status,
+			OnlineTs:  onlineTs,
+			OfflineTs: offlineTs,
+			RuleType:  "NORMAL",
+		})
+	}
+	return symbolInfos, nil
+}
 func TransferOkxSymbolInfo(resp string) ([]SymbolInfo, error) {
 	var apiResponse struct {
 		Code string `json:"code"`

@@ -65,6 +65,10 @@ func (b *Broker) GetFundingRate(symbol string) (*types.FundingRate, error) {
 }
 
 func (b *Broker) GetSymbolInfos() (map[string]types.SymbolInfo, error) {
+	err := b.updateSymbolInfoAll()
+	if err != nil {
+		return nil, err
+	}
 	return b.Datas.SymbolInfos, nil
 }
 
@@ -268,4 +272,27 @@ func (b *Broker) ToOriSymbol(symbol string) (string, error) {
 
 func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 	return nil, fmt.Errorf("not implemented")
+}
+
+// 更新交易对信息（线性与反向合约）
+func (b *Broker) updateSymbolInfoAll() error {
+	categories := []string{"linear", "inverse"}
+	for _, cate := range categories {
+		resp, err := b.Api.Instruments(map[string]interface{}{
+			"category": cate,
+		})
+		if err != nil {
+			return err
+		}
+		symbolInfos, err := types.TransferBybitSymbolInfo(resp)
+		if err != nil {
+			return err
+		}
+		for _, it := range symbolInfos {
+			std, _ := b.ToStdSymbol(it.Symbol)
+			it.Symbol = std
+			b.Datas.SymbolInfos[std] = it
+		}
+	}
+	return nil
 }
