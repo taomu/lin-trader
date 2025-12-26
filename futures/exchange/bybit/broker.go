@@ -284,6 +284,7 @@ func (b *Broker) updateSymbolInfoAll() error {
 		if err != nil {
 			return err
 		}
+		fmt.Println(resp)
 		symbolInfos, err := types.TransferBybitSymbolInfo(resp)
 		if err != nil {
 			return err
