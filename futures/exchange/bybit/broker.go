@@ -282,6 +282,7 @@ func (b *Broker) updateSymbolInfoAll() error {
 		resp, err := b.Api.Instruments(map[string]interface{}{
 			"category": "linear",
 			"status":   status,
+			"symbol":   "ZKCUSDT",
 		})
 		if err != nil {
 			return err
