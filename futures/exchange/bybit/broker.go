@@ -276,10 +276,12 @@ func (b *Broker) GetFundingInfo() ([]bndata.FundingInfo, error) {
 
 // 更新交易对信息（线性与反向合约）
 func (b *Broker) updateSymbolInfoAll() error {
-	categories := []string{"linear", "inverse"}
-	for _, cate := range categories {
+	// categories := []string{"linear", "inverse"}
+	statusSlice := []string{"PreLaunch", "Trading"}
+	for _, status := range statusSlice {
 		resp, err := b.Api.Instruments(map[string]interface{}{
-			"category": cate,
+			"category": "linear",
+			"status":   status,
 		})
 		if err != nil {
 			return err
